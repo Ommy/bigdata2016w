@@ -48,7 +48,7 @@ public class WordCount extends Configured implements Tool {
                 String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
                 if (w.length() < 2) continue;
                 w = w.substring(0, 2);
-                if (w.length() == 0 || w.length() == 1) continue;
+                if (w.length() == 0) continue;
                 WORD.set(w);
                 context.write(WORD, ONE);
             }
