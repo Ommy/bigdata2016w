@@ -27,11 +27,8 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
 
-/**
- * Simple word count demo.
- */
-public class WordCount extends Configured implements Tool {
-    private static final Logger LOG = Logger.getLogger(WordCount.class);
+public class PrefixCount extends Configured implements Tool {
+    private static final Logger LOG = Logger.getLogger(PrefixCount.class);
 
     // Mapper: emits (token, 1) for every word occurrence.
     private static class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
@@ -46,6 +43,8 @@ public class WordCount extends Configured implements Tool {
             StringTokenizer itr = new StringTokenizer(line);
             while (itr.hasMoreTokens()) {
                 String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
+                if (w.length() < 2) continue;
+                w = w.substring(0, 2);
                 if (w.length() == 0) continue;
                 WORD.set(w);
                 context.write(WORD, ONE);
@@ -108,7 +107,7 @@ public class WordCount extends Configured implements Tool {
     /**
      * Creates an instance of this tool.
      */
-    public WordCount() {}
+    public PrefixCount() {}
 
     public static class Args {
         @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
@@ -139,7 +138,7 @@ public class WordCount extends Configured implements Tool {
             return -1;
         }
 
-        LOG.info("Tool: " + WordCount.class.getSimpleName());
+        LOG.info("Tool: " + PrefixCount.class.getSimpleName());
         LOG.info(" - input path: " + args.input);
         LOG.info(" - output path: " + args.output);
         LOG.info(" - number of reducers: " + args.numReducers);
@@ -147,8 +146,8 @@ public class WordCount extends Configured implements Tool {
 
         Configuration conf = getConf();
         Job job = Job.getInstance(conf);
-        job.setJobName(WordCount.class.getSimpleName());
-        job.setJarByClass(WordCount.class);
+        job.setJobName(PrefixCount.class.getSimpleName());
+        job.setJarByClass(PrefixCount.class);
 
         job.setNumReduceTasks(args.numReducers);
 
@@ -180,6 +179,6 @@ public class WordCount extends Configured implements Tool {
      * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
      */
     public static void main(String[] args) throws Exception {
-        ToolRunner.run(new WordCount(), args);
+        ToolRunner.run(new PrefixCount(), args);
     }
 }
