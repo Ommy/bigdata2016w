@@ -1,0 +1,30 @@
+Assignment 1
+===
+
+## Question 1
+
+#### Pairs
+
+In the pairs implementation, there were 2 MapReduce jobs. In order to calculate PMI, I would need the word count of `x` in order to calculate `p(x)`. So the first MapReduce job did two things. One, it did a normal word count like we had in assignment 0. The other task it did was a line count of the input passed in. This was done through the use of counters through the Hadoop context. Once the job had finished, the counter is retreived from the job and passed onto the configuration for the second job to read.
+
+The second MapReduce job would then do the mapping of each word to its pair. The map job would go through the list of words and pair them up into the `PairOfString` object. In the reduce job, in the setup function, it would load up the result of the word count job and serialize the file into a HashMap. Then the reduce job would sum up the remaining values for the specific key and calculate the PMI, utilizing the word count loaded in.
+
+#### Stripes
+
+The stripes implementation was done very similarily to the pairs implementation. It had 2 MapReduce jobs, and the first one was the word count. The first job, similarily, calculated the total number of lines in the input file via counters. This was then saved to a temporary directory in HDFS. The counter is retreived once again and passed to the second job.
+
+The second MapReduce job would then create a HashMap of String to Float using the `HMapStF` object. Here the mapper would go through each word and either create a new entry in the map if no key existed or increment the specific key within the map. Basically it paired each word with words found on the same line. The combiner would create a new map and sum up all the KVPs it got and store them into the new map. This is then sent off to the reducer where it does the final summation and writes to disk. 
+
+## Question 2
+
+#### On my Laptop
+
+The Pairs PMI implementation runs in 26.132 seconds using the Shakespeare data.
+
+The Stripes PMI implementation runs in 12.615 seconds using the Shakespeare data.
+
+#### On the CS Environment
+
+The Pairs PMI implementation runs in 26.132 seconds using the Shakespeare data.
+
+The Stripes PMI implementation runs in 12.615 seconds using the Shakespeare data.

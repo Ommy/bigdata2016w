@@ -357,16 +357,14 @@ public class StripesPMI  extends Configured implements Tool {
         job2.setOutputFormatClass(TextOutputFormat.class);
 
         job2.setMapperClass(StripesMapper.class);
-//        job2.setPartitionerClass(StripesPartitioner.class);
         job2.setCombinerClass(StripesCombiner.class);
         job2.setReducerClass(StripesReducer.class);
 
         long startTime = System.currentTimeMillis();
-        job1.waitForCompletion(true);
-        LOG.info("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
 
         fs.delete(new Path(args.output), true);
         job2.waitForCompletion(true);
+        LOG.info("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
         fs.delete(new Path(TEMP_OUTPUT_PATH), true);
         return 0;
     }
