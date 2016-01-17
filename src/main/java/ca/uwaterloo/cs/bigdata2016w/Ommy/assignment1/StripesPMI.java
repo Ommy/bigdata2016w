@@ -165,6 +165,9 @@ public class StripesPMI  extends Configured implements Tool {
 
             Long N = Long.parseLong(context.getConfiguration().get(LINE_COUNTER));
             int keyStringCount = 0;
+            if (wordCountMap.get(key.toString()) == null) {
+                System.err.println("@@@@@@ KEY NULL POINTER " + key.toString());
+            }
             try {
                 keyStringCount = wordCountMap.get(key.toString());
             } catch(Exception e) {
@@ -186,6 +189,9 @@ public class StripesPMI  extends Configured implements Tool {
 
             for (String txt: sums.keySet()) {
                 int tempStringCount = 0;
+                if (wordCountMap.get(txt) == null) {
+                    System.err.println("@@@@@ TEMP STRING KEY: " + txt);
+                }
                 try {
                     tempStringCount = wordCountMap.get(txt);
                 } catch (Exception e) {
