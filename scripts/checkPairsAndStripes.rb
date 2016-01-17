@@ -23,9 +23,10 @@ tears_words = {}
 death_words = {}
 
 pairs_output.each do |k,v|
-  if k.include? "tears"
+  str = k.sub("(", "").sub(")", "").split(",")
+  if str[0].strip.eql? "waterloo"
     tears_words[k] = v
-  elsif k.include? "death"
+  elsif str[1].strip.eql? "toronto"
     death_words[k] = v
   end
 end
@@ -37,16 +38,16 @@ puts tears[0..5]
 puts death[0..5]
 
 
-# floatV = 0
-# theirV = 0
-# pairs_output.each do |k,v|
-#   unless (stripes_output.has_key?(k))
-#     puts "Key #{k} not found in stripes"
-#     next
-#   end
-#   floatV = (v.to_f * 100.0).floor / 100.00
-#   theirV = (stripes_output[k].to_f * 100.0).floor / 100.00
-#   unless floatV == theirV
-#     puts "Mismatch on key #{k}. Pairs returns #{v} but Stripes returns #{stripes_output[k]}"
-#   end
-# end
+floatV = 0
+theirV = 0
+pairs_output.each do |k,v|
+  unless (stripes_output.has_key?(k))
+    puts "Key #{k} not found in stripes"
+    next
+  end
+  floatV = (v.to_f * 100.0).floor / 100.00
+  theirV = (stripes_output[k].to_f * 100.0).floor / 100.00
+  unless floatV == theirV
+    puts "Mismatch on key #{k}. Pairs returns #{v} but Stripes returns #{stripes_output[k]}"
+  end
+end

@@ -19,9 +19,9 @@ The second MapReduce job would then create a HashMap of String to Float using th
 
 #### On my Laptop
 
-The Pairs PMI implementation runs in 26.132 seconds using the Shakespeare data.
+The Pairs PMI implementation runs in 34.128 seconds using the Shakespeare data.
 
-The Stripes PMI implementation runs in 12.615 seconds using the Shakespeare data.
+The Stripes PMI implementation runs in 18.111 seconds using the Shakespeare data.
 
 #### On the CS Environment
 
@@ -33,9 +33,9 @@ The Stripes PMI implementation runs in 22.99 seconds using the Shakespeare data.
 
 ### On my Laptop
 
-The Pairs PMI implemenation with no combiners runs in 28.129 seconds.
+The Pairs PMI implemenation with no combiners runs in 39.927 seconds.
 
-The Stripes PMI implementation with no combiners runs in 12.087 seconds
+The Stripes PMI implementation with no combiners runs in 19.989 seconds
 
 ### On the CS Environment
 
@@ -73,4 +73,18 @@ The reason the pair `(anjou, maine)` got such a high PMI is because the two word
 
 ## Question 7
 
+#### Waterloo
 
+`kitchener` with PMI `2.614997`
+
+`napoleon` with PMI `1.908439`
+
+`napoleonic` with PMI `1.7866189`
+
+#### Toronto
+
+`marlboros` with PMI `2.353996`
+
+`spadina` with PMI `2.3126`
+
+`leafs` with PMI `2.31089`

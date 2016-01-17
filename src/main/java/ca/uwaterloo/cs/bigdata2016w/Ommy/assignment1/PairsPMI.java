@@ -6,17 +6,14 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -307,19 +304,21 @@ public class PairsPMI  extends Configured implements Tool {
         job1.setOutputFormatClass(TextOutputFormat.class);
 
         job1.setMapperClass(args.imc ? WordCountMapper.class : WordCountMapper.class);
-        job1.setCombinerClass(WordCountCombiner.class);
+//        job1.setCombinerClass(WordCountCombiner.class);
         job1.setReducerClass(WordCountReducer.class);
+
+        long startTime = System.currentTimeMillis();
+        job1.waitForCompletion(true);
+
+        Long counter = job1.getCounters().findCounter(LineCounter.NumberOfLinesCounter).getValue();
+        conf.set(LINE_COUNTER, counter.toString());
+        conf.set(WORD_COUNT_PATH, TEMP_OUTPUT_PATH);
 
         /**
          *  Job 2
          *
          *  Pairs PMI Job
          */
-
-        job1.waitForCompletion(true);
-        Long counter = job1.getCounters().findCounter(LineCounter.NumberOfLinesCounter).getValue();
-        conf.set(LINE_COUNTER, counter.toString());
-        conf.set(WORD_COUNT_PATH, TEMP_OUTPUT_PATH);
 
         Job job2 = Job.getInstance(conf, "Job 2");
         job2.setJobName(PairsPMI.class.getSimpleName());
@@ -338,14 +337,12 @@ public class PairsPMI  extends Configured implements Tool {
 
         job2.setMapperClass(PairsMapper.class);
         job2.setPartitionerClass(PairsPartitioner.class);
-        job2.setCombinerClass(PairsCombiner.class);
+//        job2.setCombinerClass(PairsCombiner.class);
         job2.setReducerClass(PairsReducer.class);
-
-        long startTime = System.currentTimeMillis();
-        job1.waitForCompletion(true);
 
         fs.delete(new Path(args.output), true);
         job2.waitForCompletion(true);
+
         LOG.info("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
         fs.delete(new Path(TEMP_OUTPUT_PATH), true);
         return 0;
