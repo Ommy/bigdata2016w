@@ -89,6 +89,7 @@ public class StripesPMI  extends Configured implements Tool {
                 }
                 for (int j = 0; j < words.length; j++) {
                     if (i == j) continue;
+                    if (words[i].compareTo(words[j]) == 0) continue;
                     if (stripe.containsKey(words[j])) {
                         stripe.increment(words[j], 1f);
                     } else {
@@ -163,7 +164,12 @@ public class StripesPMI  extends Configured implements Tool {
                 throws IOException, InterruptedException {
 
             Long N = Long.parseLong(context.getConfiguration().get(LINE_COUNTER));
-            int keyStringCount = wordCountMap.get(key.toString());
+            int keyStringCount = 0;
+            try {
+                keyStringCount = wordCountMap.get(key.toString());
+            } catch(Exception e) {
+                System.err.println("@@@@@@ KEY NULL POINTER " + key.toString());
+            }
 
             Iterator<HMapStFW> iter = values.iterator();
             HMapStFW sums = new HMapStFW();
@@ -179,7 +185,12 @@ public class StripesPMI  extends Configured implements Tool {
             }
 
             for (String txt: sums.keySet()) {
-                int tempStringCount = wordCountMap.get(txt);
+                int tempStringCount = 0;
+                try {
+                    tempStringCount = wordCountMap.get(txt);
+                } catch (Exception e) {
+                    System.err.println("@@@@@ TEMP STRING KEY: " + txt);
+                }
                 float sum = sums.get(txt);
                 if (Float.compare(sum, 10f) < 0) continue;
                 double numerator = N * sum;
@@ -330,13 +341,20 @@ public class StripesPMI  extends Configured implements Tool {
         job1.setCombinerClass(WordCountCombiner.class);
         job1.setReducerClass(WordCountReducer.class);
 
+        job1.getConfiguration().setInt("mapred.max.split.size", 1024 * 1024 * 64);
+        job1.getConfiguration().set("mapreduce.map.memory.mb", "3072");
+        job1.getConfiguration().set("mapreduce.map.java.opts", "-Xmx3072m");
+        job1.getConfiguration().set("mapreduce.reduce.memory.mb", "3072");
+        job1.getConfiguration().set("mapreduce.reduce.java.opts", "-Xmx3072m");
+
+        job1.waitForCompletion(true);
+
         /**
          *  Job 2
          *
          *  Stripes PMI Job
          */
 
-        job1.waitForCompletion(true);
         Long counter = job1.getCounters().findCounter(LineCounter.NumberOfLinesCounter).getValue();
         conf.set(LINE_COUNTER, counter.toString());
         conf.set(WORD_COUNT_PATH, TEMP_OUTPUT_PATH);
@@ -359,6 +377,12 @@ public class StripesPMI  extends Configured implements Tool {
         job2.setMapperClass(StripesMapper.class);
         job2.setCombinerClass(StripesCombiner.class);
         job2.setReducerClass(StripesReducer.class);
+
+        job2.getConfiguration().setInt("mapred.max.split.size", 1024 * 1024 * 64);
+        job2.getConfiguration().set("mapreduce.map.memory.mb", "3072");
+        job2.getConfiguration().set("mapreduce.map.java.opts", "-Xmx3072m");
+        job2.getConfiguration().set("mapreduce.reduce.memory.mb", "3072");
+        job2.getConfiguration().set("mapreduce.reduce.java.opts", "-Xmx3072m");
 
         long startTime = System.currentTimeMillis();
 
