@@ -25,9 +25,9 @@ The Stripes PMI implementation runs in 18.111 seconds using the Shakespeare data
 
 #### On the CS Environment
 
-The Pairs PMI implementation runs in 60.14 seconds using the Shakespeare data.
+The Pairs PMI implementation runs in 60.048 seconds using the Shakespeare data.
 
-The Stripes PMI implementation runs in 22.99 seconds using the Shakespeare data.
+The Stripes PMI implementation runs in 24.023 seconds using the Shakespeare data.
 
 ## Question 3
 
@@ -39,9 +39,9 @@ The Stripes PMI implementation with no combiners runs in 19.989 seconds
 
 ### On the CS Environment
 
-The Pairs PMI implementation with no combiners runs in 62.14 seconds.
+The Pairs PMI implementation with no combiners runs in 73.974 seconds.
 
-The Stripes PMI implementation with no combiners runs in 22.879 seconds.
+The Stripes PMI implementation with no combiners runs in 29.028 seconds.
 
 ## Question 4
 
