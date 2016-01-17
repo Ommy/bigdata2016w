@@ -25,6 +25,52 @@ The Stripes PMI implementation runs in 12.615 seconds using the Shakespeare data
 
 #### On the CS Environment
 
-The Pairs PMI implementation runs in 26.132 seconds using the Shakespeare data.
+The Pairs PMI implementation runs in 60.14 seconds using the Shakespeare data.
 
-The Stripes PMI implementation runs in 12.615 seconds using the Shakespeare data.
+The Stripes PMI implementation runs in 22.99 seconds using the Shakespeare data.
+
+## Question 3
+
+### On my Laptop
+
+The Pairs PMI implemenation with no combiners runs in 28.129 seconds.
+
+The Stripes PMI implementation with no combiners runs in 12.087 seconds
+
+### On the CS Environment
+
+The Pairs PMI implementation with no combiners runs in 62.14 seconds.
+
+The Stripes PMI implementation with no combiners runs in 22.879 seconds.
+
+## Question 4
+
+There ends up being `77,198` unique pairs. If we don't consider the symmetric cause since `PMI(x,y) = PMI(y,x)`, then we have `38,599` unique pairs.
+
+## Question 5
+
+The pair `(anjou, maine)` was the highest PMI at `3.633` and `(milford, haven)` was extremely close to it with a PMI of `3.620`.
+
+The reason the pair `(anjou, maine)` got such a high PMI is because the two words are usually together in once sentence. Also, in Shakespeare and early England, King Charles VII of France received two lands for marrying Margaret, which were Maine and Anjou. So, whenever Maine is mentioned in text, it is usually accomanied by Anjou.
+
+## Question 6
+
+#### Tears
+
+`shed` with PMI `2.111`
+
+`salt` with PMI `2.0528`
+
+`eyes` with PMI `1.165`
+
+### Death
+
+`father's` with PMI `1.12025`
+
+`die` with PMI `0.754159`
+
+`life` with PMI `0.73813`
+
+## Question 7
+
+
