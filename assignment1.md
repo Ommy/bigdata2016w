@@ -45,7 +45,7 @@ The Stripes PMI implementation with no combiners runs in 29.028 seconds.
 
 ## Question 4
 
-There ends up being `77,198` unique pairs. If we don't consider the symmetric cause since `PMI(x,y) = PMI(y,x)`, then we have `38,599` unique pairs.
+There ends up being `77,198` unique pairs. If we don't consider the symmetric case since `PMI(x,y) = PMI(y,x)`, then we have `38,599` unique pairs.
 
 ## Question 5
 

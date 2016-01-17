@@ -316,7 +316,7 @@ public class StripesPMI  extends Configured implements Tool {
         job1.setOutputFormatClass(TextOutputFormat.class);
 
         job1.setMapperClass(args.imc ? WordCountMapper.class : WordCountMapper.class);
-//        job1.setCombinerClass(WordCountCombiner.class);
+        job1.setCombinerClass(WordCountCombiner.class);
         job1.setReducerClass(WordCountReducer.class);
 
         long startTime = System.currentTimeMillis();
@@ -348,7 +348,7 @@ public class StripesPMI  extends Configured implements Tool {
         job2.setOutputFormatClass(TextOutputFormat.class);
 
         job2.setMapperClass(StripesMapper.class);
-//        job2.setCombinerClass(StripesCombiner.class);
+        job2.setCombinerClass(StripesCombiner.class);
         job2.setReducerClass(StripesReducer.class);
 
         fs.delete(new Path(args.output), true);
