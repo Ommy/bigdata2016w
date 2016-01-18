@@ -232,7 +232,6 @@ public class StripesPMI  extends Configured implements Tool {
                 sum += iter.next().get();
             }
 
-            if (sum < 10) return;
             WORD.set(key);
             COUNT.set(sum + "");
 
