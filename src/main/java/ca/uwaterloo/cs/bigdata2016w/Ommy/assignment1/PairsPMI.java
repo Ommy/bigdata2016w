@@ -124,7 +124,7 @@ public class PairsPMI  extends Configured implements Tool {
             for (FileStatus status : fss) {
                 Path path = status.getPath();
                 if (path.getName().contains("SUCCESS")) continue;
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fs.open(path)));
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fs.open(path), "UTF-8"));
 
                 String line = bufferedReader.readLine();
                 while (line != null) {
