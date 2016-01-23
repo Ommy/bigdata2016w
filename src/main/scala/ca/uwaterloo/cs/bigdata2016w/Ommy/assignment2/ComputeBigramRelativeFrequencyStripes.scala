@@ -25,7 +25,7 @@ object ComputeBigramRelativeFrequencyStripes extends Tokenizer {
     if (!args.imc()) {
       textFile
         .flatMap(line => {
-          val tokens = tokenize(line)
+          val tokens:List[String] = tokenize(line)
           var stripes:Map[String, Map[String, Float]] = Map()
           if (tokens.length > 2) {
             for (x <- 1 to tokens.length-1) {
@@ -53,10 +53,10 @@ object ComputeBigramRelativeFrequencyStripes extends Tokenizer {
         })
         .map(m => {
           (m._1, m._2)
-        }).groupByKey()
+        }).groupByKey(args.reducers())
         .map(item => {
-          val key = item._1
-          val maps = item._2
+          val key:String = item._1
+          val maps:Iterable[Map[String, Float]] = item._2
 
           var result:Map[String, Float] = Map()
 
