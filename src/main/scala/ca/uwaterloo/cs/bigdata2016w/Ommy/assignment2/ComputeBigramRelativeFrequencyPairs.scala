@@ -9,6 +9,8 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 import org.apache.spark.Partitioner
 
+import scala.collection.mutable.ListBuffer
+
 class PairPartitioner( numberOfReducers: Int) extends Partitioner {
 
   override def getPartition(key: Any): Int = {
@@ -36,7 +38,7 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
     val textFile = sc.textFile(args.input())
 
     if (!args.imc()) {
-      val kk = textFile
+      textFile
         .flatMap(line => {
           val tokens = tokenize(line)
           if (tokens.length > 2) {
@@ -55,13 +57,23 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
         })
         .reduceByKey(partitioner = pp, _+_)
         .mapPartitions((f) => {
-          var mapped:List[(String, String, Float)] = List()
+          var mapped:ListBuffer[(String, String, Float)] = ListBuffer()
           var wordCounts:Map[String, Float] = Map()
-          f.foreach((i) => {
+
+          while (f.hasNext) {
+            val i = f.next()
             if (i._1._2.contentEquals("*")) {
               wordCounts = wordCounts + (i._1._1 -> i._2)
             } else {
-              mapped = mapped :+ (i._1._1, i._1._2, i._2)
+              mapped = mapped :+(i._1._1, i._1._2, i._2)
+            }
+          }
+
+//          f.foreach((i) => {
+//            if (i._1._2.contentEquals("*")) {
+//              wordCounts = wordCounts + (i._1._1 -> i._2)
+//            } else {
+//              mapped = mapped :+ (i._1._1, i._1._2, i._2)
 //              if (mapped.contains(i._1._1)) {
 //                val at: Map[String, Float] = mapped(i._1._1) + (i._1._2 -> i._2)
 //                mapped = mapped + (i._1._1 -> at)
@@ -69,12 +81,19 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
 //                val at: Map[String, Float] = Map(i._1._2 -> i._2)
 //                mapped = mapped + (i._1._1 -> at)
 //              }
-            }
-          })
-          var result:List[(String, String, Float)] = List()
+//            }
+//          })
+          var result:ListBuffer[(String, String, Float)] = ListBuffer()
 
-          mapped.foreach((i) => {
+          var x = 0
+          while (x < mapped.length) {
+            val i = mapped(x)
             result = result :+ ((i._1, i._2, (i._3 / wordCounts(i._1))))
+            x = x + 1
+          }
+
+//          mapped.foreach((i) => {
+//            result = result :+ ((i._1, i._2, (i._3 / wordCounts(i._1))))
 //            i._2.foreach((x) => {
 //              if (x._1.contentEquals("*")) {
 //                result = result + ((i._1, x._1) -> (x._2))
@@ -82,7 +101,7 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
 //                result = result + ((i._1, x._1) -> (x._2 / wc))
 //              }
 //            })
-          })
+//          })
           wordCounts.foreach((i) => {
             result = result :+ ((i._1, "*", i._2))
           })
