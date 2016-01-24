@@ -55,27 +55,36 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
         })
         .reduceByKey(partitioner = pp, _+_)
         .mapPartitions((f) => {
-          var mapped:Map[String, Map[String, Float]] = Map()
+          var mapped:List[(String, String, Float)] = List()
+          var wordCounts:Map[String, Float] = Map()
           f.foreach((i) => {
-            if (mapped.contains(i._1._1)) {
-              val at:Map[String, Float] = mapped(i._1._1) + (i._1._2 -> i._2)
-              mapped =  mapped + (i._1._1 -> at)
+            if (i._1._2.contentEquals("*")) {
+              wordCounts = wordCounts + (i._1._1 -> i._2)
             } else {
-              val at:Map[String, Float] = Map(i._1._2 -> i._2)
-              mapped = mapped + (i._1._1 -> at)
+              mapped = mapped :+ (i._1._1, i._1._2, i._2)
+//              if (mapped.contains(i._1._1)) {
+//                val at: Map[String, Float] = mapped(i._1._1) + (i._1._2 -> i._2)
+//                mapped = mapped + (i._1._1 -> at)
+//              } else {
+//                val at: Map[String, Float] = Map(i._1._2 -> i._2)
+//                mapped = mapped + (i._1._1 -> at)
+//              }
             }
           })
-          var result:Map[(String, String), Float] = Map()
+          var result:List[(String, String, Float)] = List()
 
           mapped.foreach((i) => {
-            val wc:Float = i._2("*")
-            i._2.foreach((x) => {
-              if (x._1.contentEquals("*")) {
-                result = result + ((i._1, x._1) -> (x._2))
-              } else {
-                result = result + ((i._1, x._1) -> (x._2 / wc))
-              }
-            })
+            result = result :+ ((i._1, i._2, (i._3 / wordCounts(i._1))))
+//            i._2.foreach((x) => {
+//              if (x._1.contentEquals("*")) {
+//                result = result + ((i._1, x._1) -> (x._2))
+//              } else {
+//                result = result + ((i._1, x._1) -> (x._2 / wc))
+//              }
+//            })
+          })
+          wordCounts.foreach((i) => {
+            result = result :+ ((i._1, "*", i._2))
           })
           result.iterator
         }, preservesPartitioning = false)
