@@ -42,7 +42,7 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
         .flatMap(line => {
           val tokens = tokenize(line)
           if (tokens.length > 2) {
-            val pair:List[(String, String)] = tokens.take(tokens.length-1).sliding(2).map(x => (x(0), x(1))).toList
+            val pair:List[(String, String)] = tokens.take(tokens.length).sliding(2).map(x => (x(0), x(1))).toList
             val starPairs:List[(String, String)] = tokens.take(tokens.length-1).map(word => (word, "*"))
             pair ::: starPairs
           } else {
@@ -55,19 +55,30 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
             ((f._1, f._2), 1.0f)
           })
         })
-        .reduceByKey(partitioner = pp, _+_)
+        .reduceByKey(_+_)
+        .repartitionAndSortWithinPartitions(pp)
         .mapPartitions((f) => {
-          var mapped:ListBuffer[(String, String, Float)] = ListBuffer()
           var wordCounts:Map[String, Float] = Map()
+          var result:ListBuffer[(String, String, Float)] = ListBuffer()
 
           while (f.hasNext) {
             val i = f.next()
             if (i._1._2.contentEquals("*")) {
               wordCounts = wordCounts + (i._1._1 -> i._2)
+              result = result :+ (i._1._1, i._1._2, i._2)
             } else {
-              mapped = mapped :+(i._1._1, i._1._2, i._2)
+              result = result :+ (i._1._1, i._1._2, (i._2/wordCounts(i._1._1)))
             }
           }
+//
+//          var x = 0
+//          while (x < result.length) {
+//            val res = result(x)
+//            if (!res._2.contentEquals("*")) {
+//              result(x) = (res._1, res._2, (res._3/wordCounts(res._1)))
+//            }
+//            x += 1
+//          }
 
 //          f.foreach((i) => {
 //            if (i._1._2.contentEquals("*")) {
@@ -83,14 +94,14 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
 //              }
 //            }
 //          })
-          var result:ListBuffer[(String, String, Float)] = ListBuffer()
 
-          var x = 0
-          while (x < mapped.length) {
-            val i = mapped(x)
-            result = result :+ ((i._1, i._2, (i._3 / wordCounts(i._1))))
-            x = x + 1
-          }
+
+//          var x = 0
+//          while (x < mapped.length) {
+//            val i = mapped(x)
+//            result = result :+ ((i._1, i._2, (i._3 / wordCounts(i._1))))
+//            x = x + 1
+//          }
 
 //          mapped.foreach((i) => {
 //            result = result :+ ((i._1, i._2, (i._3 / wordCounts(i._1))))
@@ -102,9 +113,9 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
 //              }
 //            })
 //          })
-          wordCounts.foreach((i) => {
-            result = result :+ ((i._1, "*", i._2))
-          })
+//          wordCounts.foreach((i) => {
+//            result = result :+ ((i._1, "*", i._2))
+//          })
           result.iterator
         }, preservesPartitioning = false)
         .saveAsTextFile(args.output())
