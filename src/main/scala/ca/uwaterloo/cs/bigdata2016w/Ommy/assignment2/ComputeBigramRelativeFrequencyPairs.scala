@@ -53,8 +53,8 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
 //            ((f._1, f._2), 1)
 //          })
 //        })
-        .reduceByKey(_+_, numPartitions = args.reducers())
-        .repartitionAndSortWithinPartitions(partitioner = pp)
+        .reduceByKey(partitioner = pp, _+_)
+//        .repartitionAndSortWithinPartitions(partitioner = pp)
         .mapPartitions((f) => {
           var mapped:Map[String, Map[String, Float]] = Map()
           f.foreach((i) => {
