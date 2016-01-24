@@ -47,14 +47,13 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
             List()
           }
         })
-        .map((i) => ((i._1, i._2), 1))
-//        .mapPartitions((iter) => {
-//          iter.map((f) => {
-//            ((f._1, f._2), 1)
-//          })
-//        })
+//        .map((i) => ((i._1, i._2), 1.0f))
+        .mapPartitions((iter) => {
+          iter.map((f) => {
+            ((f._1, f._2), 1.0f)
+          })
+        })
         .reduceByKey(partitioner = pp, _+_)
-//        .repartitionAndSortWithinPartitions(partitioner = pp)
         .mapPartitions((f) => {
           var mapped:Map[String, Map[String, Float]] = Map()
           f.foreach((i) => {
@@ -79,7 +78,7 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
             })
           })
           result.iterator
-        }, preservesPartitioning = true)
+        }, preservesPartitioning = false)
         .saveAsTextFile(args.output())
     } else {
 
