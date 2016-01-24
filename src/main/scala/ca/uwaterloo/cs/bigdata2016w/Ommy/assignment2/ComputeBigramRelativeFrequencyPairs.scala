@@ -34,66 +34,52 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
     FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true)
     val pp = new PairPartitioner(args.reducers())
     val textFile = sc.textFile(args.input())
-    var wcMap:Map[String, Int] = Map()
 
     if (!args.imc()) {
-      textFile
+      val kk = textFile
         .flatMap(line => {
           val tokens = tokenize(line)
           if (tokens.length > 2) {
-            val pair = tokens.sliding(2).map(x => (x(0), x(1))).toList
-            val starPairs = tokens.map(word => (word, "*"))
+            val pair:List[(String, String)] = tokens.take(tokens.length-1).sliding(2).map(x => (x(0), x(1))).toList
+            val starPairs:List[(String, String)] = tokens.take(tokens.length-1).map(word => (word, "*"))
             pair ::: starPairs
           } else {
             List()
           }
         })
-        .map(word => {
-          (word, 1)
-        })
-        .reduceByKey(pp, (a,b) => {
-          a + b
-        }).groupByKey(pp)
-        .map(a => {
-          val key = a._1
-          val value = a._2.toList
-          var margin = 0
-          var sum:Int = 0
-          for(x <- 0 to value.length-1) {
-            sum = sum + value(x)
-          }
+        .map((i) => ((i._1, i._2), 1))
+//        .mapPartitions((iter) => {
+//          iter.map((f) => {
+//            ((f._1, f._2), 1)
+//          })
+//        })
+        .reduceByKey(_+_, numPartitions = args.reducers())
+        .repartitionAndSortWithinPartitions(partitioner = pp)
+        .mapPartitions((f) => {
+          var mapped:Map[String, Map[String, Float]] = Map()
+          f.foreach((i) => {
+            if (mapped.contains(i._1._1)) {
+              val at:Map[String, Float] = mapped(i._1._1) + (i._1._2 -> i._2)
+              mapped =  mapped + (i._1._1 -> at)
+            } else {
+              val at:Map[String, Float] = Map(i._1._2 -> i._2)
+              mapped = mapped + (i._1._1 -> at)
+            }
+          })
+          var result:Map[(String, String), Float] = Map()
 
-          if (key._2.contains("*")) {
-//            margin = sum
-            wcMap = wcMap ++ Map(key._1 -> sum)
-            (key, sum)
-          } else {
-            val margin:Int = wcMap(key._1)
-            (key, sum / margin)
-          }
-        })
-//        .reduceByKey(_+_)
-//        .repartitionAndSortWithinPartitions(pp)
-//        .groupByKey
-//        .map(iter => {
-//          val key = iter._1
-//          val list = iter._2.toList
-//          var sum = 0
-//          for (x <- 0 to list.length-1) {
-//            sum = sum + list(x)
-//          }
-//
-//          println("@@@@@@: " + key + " ******: " + list)
-//
-//          if (key._2.contentEquals("*")) {
-//            (key, sum)
-//          } else {
-//            (key, sum)
-//          }
-//        })
-//        .reduceByKey(pp, (a,b) => {
-//          a + b
-//        })
+          mapped.foreach((i) => {
+            val wc:Float = i._2("*")
+            i._2.foreach((x) => {
+              if (x._1.contentEquals("*")) {
+                result = result + ((i._1, x._1) -> (x._2))
+              } else {
+                result = result + ((i._1, x._1) -> (x._2 / wc))
+              }
+            })
+          })
+          result.iterator
+        }, preservesPartitioning = true)
         .saveAsTextFile(args.output())
     } else {
 
