@@ -49,74 +49,32 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
             List()
           }
         })
-//        .map((i) => ((i._1, i._2), 1.0f))
-        .mapPartitions((iter) => {
-          iter.map((f) => {
-            ((f._1, f._2), 1.0f)
-          })
-        })
+        .map((i) => ((i._1, i._2), 1.0f))
         .reduceByKey(_+_)
         .repartitionAndSortWithinPartitions(pp)
         .mapPartitions((f) => {
-          var wordCounts:Map[String, Float] = Map()
-          var result:ListBuffer[(String, String, Float)] = ListBuffer()
-
-          while (f.hasNext) {
-            val i = f.next()
-            if (i._1._2.contentEquals("*")) {
-              wordCounts = wordCounts + (i._1._1 -> i._2)
-              result = result :+ (i._1._1, i._1._2, i._2)
+          var wc:Float = 0.0f
+          f.map((i) => {
+            if (i._1._2 == "*") {
+              wc = i._2
+              ((i._1._1, i._1._2), i._2)
             } else {
-              result = result :+ (i._1._1, i._1._2, (i._2/wordCounts(i._1._1)))
+              ((i._1._1, i._1._2), (i._2/wc))
             }
-          }
+          })
+//          var wordCounts:Map[String, Float] = Map()
+//          var result:ListBuffer[(String, String, Float)] = ListBuffer()
 //
-//          var x = 0
-//          while (x < result.length) {
-//            val res = result(x)
-//            if (!res._2.contentEquals("*")) {
-//              result(x) = (res._1, res._2, (res._3/wordCounts(res._1)))
-//            }
-//            x += 1
-//          }
-
-//          f.foreach((i) => {
+//          while (f.hasNext) {
+//            val i = f.next()
 //            if (i._1._2.contentEquals("*")) {
 //              wordCounts = wordCounts + (i._1._1 -> i._2)
+//              result = result :+ (i._1._1, i._1._2, i._2)
 //            } else {
-//              mapped = mapped :+ (i._1._1, i._1._2, i._2)
-//              if (mapped.contains(i._1._1)) {
-//                val at: Map[String, Float] = mapped(i._1._1) + (i._1._2 -> i._2)
-//                mapped = mapped + (i._1._1 -> at)
-//              } else {
-//                val at: Map[String, Float] = Map(i._1._2 -> i._2)
-//                mapped = mapped + (i._1._1 -> at)
-//              }
+//              result = result :+ (i._1._1, i._1._2, (i._2/wordCounts(i._1._1)))
 //            }
-//          })
-
-
-//          var x = 0
-//          while (x < mapped.length) {
-//            val i = mapped(x)
-//            result = result :+ ((i._1, i._2, (i._3 / wordCounts(i._1))))
-//            x = x + 1
 //          }
-
-//          mapped.foreach((i) => {
-//            result = result :+ ((i._1, i._2, (i._3 / wordCounts(i._1))))
-//            i._2.foreach((x) => {
-//              if (x._1.contentEquals("*")) {
-//                result = result + ((i._1, x._1) -> (x._2))
-//              } else {
-//                result = result + ((i._1, x._1) -> (x._2 / wc))
-//              }
-//            })
-//          })
-//          wordCounts.foreach((i) => {
-//            result = result :+ ((i._1, "*", i._2))
-//          })
-          result.iterator
+//          result.iterator
         }, preservesPartitioning = false)
         .saveAsTextFile(args.output())
     } else {
