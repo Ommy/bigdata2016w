@@ -9,8 +9,6 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 import org.apache.spark.Partitioner
 
-import scala.collection.mutable.ListBuffer
-
 class PairPartitioner( numberOfReducers: Int) extends Partitioner {
 
   override def getPartition(key: Any): Int = {
@@ -37,49 +35,32 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
     val pp = new PairPartitioner(args.reducers())
     val textFile = sc.textFile(args.input())
 
-    if (!args.imc()) {
-      textFile
-        .flatMap(line => {
-          val tokens = tokenize(line)
-          if (tokens.length > 2) {
-            val pair:List[(String, String)] = tokens.take(tokens.length).sliding(2).map(x => (x(0), x(1))).toList
-            val starPairs:List[(String, String)] = tokens.take(tokens.length-1).map(word => (word, "*"))
-            pair ::: starPairs
+    textFile
+      .flatMap(line => {
+        val tokens = tokenize(line)
+        if (tokens.length > 2) {
+          val pair:List[(String, String)] = tokens.take(tokens.length).sliding(2).map(x => (x(0), x(1))).toList
+          val starPairs:List[(String, String)] = tokens.take(tokens.length-1).map(word => (word, "*"))
+          pair ::: starPairs
+        } else {
+          List()
+        }
+      })
+      .map((i) => ((i._1, i._2), 1.0f))
+      .reduceByKey(_+_)
+      .repartitionAndSortWithinPartitions(pp)
+      .mapPartitions((f) => {
+        var wc:Float = 0.0f
+        f.map((i) => {
+          if (i._1._2 == "*") {
+            wc = i._2
+            ((i._1._1, i._1._2), i._2)
           } else {
-            List()
+            ((i._1._1, i._1._2), i._2/wc)
           }
         })
-        .map((i) => ((i._1, i._2), 1.0f))
-        .reduceByKey(_+_)
-        .repartitionAndSortWithinPartitions(pp)
-        .mapPartitions((f) => {
-          var wc:Float = 0.0f
-          f.map((i) => {
-            if (i._1._2 == "*") {
-              wc = i._2
-              ((i._1._1, i._1._2), i._2)
-            } else {
-              ((i._1._1, i._1._2), (i._2/wc))
-            }
-          })
-//          var wordCounts:Map[String, Float] = Map()
-//          var result:ListBuffer[(String, String, Float)] = ListBuffer()
-//
-//          while (f.hasNext) {
-//            val i = f.next()
-//            if (i._1._2.contentEquals("*")) {
-//              wordCounts = wordCounts + (i._1._1 -> i._2)
-//              result = result :+ (i._1._1, i._1._2, i._2)
-//            } else {
-//              result = result :+ (i._1._1, i._1._2, (i._2/wordCounts(i._1._1)))
-//            }
-//          }
-//          result.iterator
-        }, preservesPartitioning = false)
-        .saveAsTextFile(args.output())
-    } else {
-
-    }
+      }, preservesPartitioning = false)
+      .saveAsTextFile(args.output())
   }
 
 }
