@@ -5,8 +5,19 @@ import ca.uwaterloo.cs.bigdata2016w.Ommy.util.Conf
 
 import org.apache.log4j._
 import org.apache.hadoop.fs._
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkConf
+import org.apache.spark.{Partitioner, SparkContext, SparkConf}
+
+class StripePartitioner( numberOfReducers: Int) extends Partitioner {
+
+  override def getPartition(key: Any): Int = {
+    val k = key.asInstanceOf[String]
+    return (k.hashCode() & Int.MaxValue) % numberOfReducers
+  }
+
+  override def numPartitions: Int = {
+    return numberOfReducers
+  }
+}
 
 object ComputeBigramRelativeFrequencyStripes extends Tokenizer {
   var log = Logger.getLogger(getClass().getName())
@@ -16,6 +27,7 @@ object ComputeBigramRelativeFrequencyStripes extends Tokenizer {
 
     val conf = new SparkConf().setAppName("BigramRelativeFrequencyStripes")
     val sc = new SparkContext(conf)
+    val pp = new StripePartitioner(args.reducers())
 
     val outputDir = new Path(args.output())
     FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true)
@@ -53,34 +65,47 @@ object ComputeBigramRelativeFrequencyStripes extends Tokenizer {
         })
         .map(m => {
           (m._1, m._2)
-        }).groupByKey(args.reducers())
-        .map(item => {
-          val key:String = item._1
-          val maps:Iterable[Map[String, Float]] = item._2
-
-          var result:Map[String, Float] = Map()
-
-          maps.foreach((f) => {
-            f.foreach((m) => {
-              if (result.contains(m._1)) {
-                val t:Float = result(m._1)
-                result = result + (m._1 -> (t+m._2))
-              } else {
-                result = result + m
-              }
+        })
+        .reduceByKey((x, y) => {
+          x ++ y.map{ case (k,v) => k -> (v + x.getOrElse(k, 0.0f)) }
+        })
+        .repartitionAndSortWithinPartitions(pp)
+        .mapPartitions(item => {
+          item.map((f) => {
+            var sum:Float = 0
+            f._2.foreach((i) => {
+              sum += i._2
+            })
+            f._2.map((i) => {
+              ((f._1, i._1), i._2 / sum)
             })
           })
-
-          var sum:Float = 0.0f
-          result.foreach((f) => {
-            sum = sum + f._2
-          })
-
-          result.foreach((f) => {
-            val t:Float = f._2
-            result = result + (f._1 -> (t/sum))
-          })
-          (key, result)
+//          val key:String = item._1
+//          val maps:Map[String, Float]] = item._2
+//
+//          var result:Map[String, Float] = Map()
+//
+//          maps.foreach((f) => {
+//            f.foreach((m) => {
+//              if (result.contains(m._1)) {
+//                val t:Float = result(m._1)
+//                result = result + (m._1 -> (t+m._2))
+//              } else {
+//                result = result + m
+//              }
+//            })
+//          })
+//
+//          var sum:Float = 0.0f
+//          result.foreach((f) => {
+//            sum = sum + f._2
+//          })
+//
+//          result.foreach((f) => {
+//            val t:Float = f._2
+//            result = result + (f._1 -> (t/sum))
+//          })
+//          (key, result)
         })
 //        .reduceByKey((a:Map[String, Float],b:Map[String, Float]) => {
 //          a
