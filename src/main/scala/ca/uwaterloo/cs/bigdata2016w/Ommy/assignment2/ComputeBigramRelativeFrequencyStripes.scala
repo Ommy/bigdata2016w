@@ -37,31 +37,55 @@ object ComputeBigramRelativeFrequencyStripes extends Tokenizer {
     if (!args.imc()) {
       textFile
         .flatMap(line => {
+//          var stripes:Map[String, Map[String, Float]] = Map()
+//          if (tokens.length > 2) {
+//            for (x <- 1 to tokens.length-1) {
+//              val prev = tokens(x-1)
+//              val curr = tokens(x)
+//              if (stripes.contains(prev)) {
+//                var stripe:Map[String, Float] = stripes(prev)
+//                if (stripe.contains(curr)) {
+//                  val count:Float = stripe(curr)
+//                  stripe = stripe + (curr -> (count + 1.0f))
+//                  stripes = stripes + (curr -> stripe)
+//                } else {
+//                  stripe = stripe + (curr -> 1.0f)
+//                  stripes = stripes + (curr -> stripe)
+//                }
+//              } else {
+//                val stripe:Map[String, Float] = Map(curr -> 1.0f)
+//                stripes = stripes + (prev -> stripe)
+//              }
+//            }
           val tokens:List[String] = tokenize(line)
           var stripes:Map[String, Map[String, Float]] = Map()
-          if (tokens.length > 2) {
-            for (x <- 1 to tokens.length-1) {
-              val prev = tokens(x-1)
-              val curr = tokens(x)
-              if (stripes.contains(prev)) {
-                var stripe:Map[String, Float] = stripes(prev)
-                if (stripe.contains(curr)) {
-                  val count:Float = stripe(curr)
-                  stripe = stripe + (curr -> (count + 1.0f))
-                  stripes = stripes + (curr -> stripe)
-                } else {
-                  stripe = stripe + (curr -> 1.0f)
-                  stripes = stripes + (curr -> stripe)
-                }
-              } else {
-                val stripe:Map[String, Float] = Map(curr -> 1.0f)
-                stripes = stripes + (prev -> stripe)
-              }
+          tokens.sliding(2).take(tokens.length-1).foreach((x) => {
+            if (!stripes.contains(x.head)) {
+              stripes += (x.head -> Map(x(1) -> 1.0f))
+            } else {
+              stripes += (x.head -> (stripes(x.head) + (x(1) -> (1.0f + stripes(x.head).getOrElse(x(1), 0.0f)))))
             }
-            stripes
-          } else {
-            List()
-          }
+          })
+//          if (tokens.length > 2) {
+//            for (x <- 1 to tokens.length-1) {
+//              val prev = tokens(x-1)
+//              val curr = tokens(x)
+//              if (stripes.contains(prev)) {
+//                var stripe:Map[String, Float] = stripes(prev)
+//                if (stripe.contains(curr)) {
+//                  val count:Float = stripe(curr)
+//                  stripe = stripe + (curr -> (count + 1.0f))
+//                  stripes = stripes + (curr -> stripe)
+//                } else {
+//                  stripe = stripe + (curr -> 1.0f)
+//                  stripes = stripes + (curr -> stripe)
+//                }
+//              } else {
+//                val stripe:Map[String, Float] = Map(curr -> 1.0f)
+//                stripes = stripes + (prev -> stripe)
+//              }
+//            }
+          stripes
         })
         .map(m => {
           (m._1, m._2)
