@@ -33,7 +33,7 @@ object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
     val outputDir = new Path(args.output())
     FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true)
     val pp = new PairPartitioner(args.reducers())
-    val textFile = sc.textFile(args.input())
+    val textFile = sc.textFile(args.input(), args.reducers())
 
     textFile
       .flatMap(line => {
