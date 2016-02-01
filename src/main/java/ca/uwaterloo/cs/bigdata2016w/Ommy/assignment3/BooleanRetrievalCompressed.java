@@ -1,20 +1,15 @@
 package ca.uwaterloo.cs.bigdata2016w.Ommy.assignment3;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Set;
-import java.util.Stack;
-import java.util.TreeSet;
+import java.io.*;
+import java.util.*;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.MapFile;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.*;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.kohsuke.args4j.CmdLineException;
@@ -26,18 +21,26 @@ import tl.lin.data.array.ArrayListWritable;
 import tl.lin.data.pair.PairOfInts;
 import tl.lin.data.pair.PairOfWritables;
 
-public class BooleanRetrieval extends Configured implements Tool {
-    private MapFile.Reader index;
+public class BooleanRetrievalCompressed extends Configured implements Tool {
+    private List<MapFile.Reader> index;
     private FSDataInputStream collection;
     private Stack<Set<Integer>> stack;
+    private int numReducers;
 
-    private BooleanRetrieval() {
+    private BooleanRetrievalCompressed() {
     }
 
     private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
-        index = new MapFile.Reader(new Path(indexPath + "/part-r-00000"), fs.getConf());
+        index = new ArrayList<>();
+        FileStatus[] status = fs.listStatus(new Path(indexPath));
+        for (FileStatus fss : status) {
+            Path path = fss.getPath();
+            if (path.getName().contains("SUCCESS")) continue;
+            index.add(new MapFile.Reader(path, fs.getConf()));
+        }
+        numReducers = index.size();
         collection = fs.open(new Path(collectionPath));
-        stack = new Stack<Set<Integer>>();
+        stack = new Stack<>();
     }
 
     private void runQuery(String q) throws IOException {
@@ -54,7 +57,6 @@ public class BooleanRetrieval extends Configured implements Tool {
         }
 
         Set<Integer> set = stack.pop();
-
         for (Integer i : set) {
             String line = fetchLine(i);
             System.out.println(i + "\t" + line);
@@ -99,7 +101,6 @@ public class BooleanRetrieval extends Configured implements Tool {
 
     private Set<Integer> fetchDocumentSet(String term) throws IOException {
         Set<Integer> set = new TreeSet<Integer>();
-
         for (PairOfInts pair : fetchPostings(term)) {
             set.add(pair.getLeftElement());
         }
@@ -107,15 +108,36 @@ public class BooleanRetrieval extends Configured implements Tool {
         return set;
     }
 
-    private ArrayListWritable<PairOfInts> fetchPostings(String term) throws IOException {
+    private int getHash(String key) {
+        return (key.hashCode() & Integer.MAX_VALUE) % numReducers;
+    }
+
+    private List<PairOfInts> fetchPostings(String term) throws IOException {
         Text key = new Text();
-        PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>> value =
-                new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>();
+        PairOfWritables<VIntWritable, BytesWritable> value = new PairOfWritables<>();
+        List<PairOfInts> list = new ArrayList<>();
 
         key.set(term);
-        index.get(key, value);
 
-        return value.getRightElement();
+        index.get(getHash(term)).get(key, value);
+        if (value.getKey().get() == 0) {
+            return list;
+        }
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(value.getRightElement().getBytes());
+        DataInputStream dis = new DataInputStream(byteArrayInputStream);
+
+        int docno = -1;
+        for (int i = 0; i< value.getKey().get(); i++) {
+            if (docno == -1) {
+                docno = WritableUtils.readVInt(dis);
+            } else {
+                docno += WritableUtils.readVInt(dis);
+            }
+            int freq = WritableUtils.readVInt(dis);
+            list.add(new PairOfInts(docno, freq));
+        }
+
+        return list;
     }
 
     private String fetchLine(long offset) throws IOException {
@@ -172,6 +194,6 @@ public class BooleanRetrieval extends Configured implements Tool {
      * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
      */
     public static void main(String[] args) throws Exception {
-        ToolRunner.run(new BooleanRetrieval(), args);
+        ToolRunner.run(new BooleanRetrievalCompressed(), args);
     }
 }
