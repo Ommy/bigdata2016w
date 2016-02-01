@@ -70,7 +70,6 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
     private static class MyReducer extends
             Reducer<PairOfStringLong, IntWritable, Text, BytesWritable> {
-        private final static VIntWritable DF = new VIntWritable();
         private static BytesWritable bW = new BytesWritable();
         private static String prev;
         private static int gap = -1;
@@ -101,7 +100,6 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
                     WritableUtils.writeVInt(dataOutStream, gap); // gap
                     WritableUtils.writeVInt(dataOutStream, tf.getRightElement());
                 }
-//                DF.set(P.size());
                 bW = new BytesWritable(byteArrayOutputStream.toByteArray());
                 context.write(new Text(prev), bW);
                 byteArrayOutputStream.reset();
@@ -132,7 +130,6 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
                 WritableUtils.writeVInt(dataOutStream, gap); // gap
                 WritableUtils.writeVInt(dataOutStream, tf.getRightElement());
             }
-            DF.set(P.size());
             bW = new BytesWritable(byteArrayOutputStream.toByteArray());
             context.write(new Text(prev), bW);
             byteArrayOutputStream.reset();
