@@ -14,25 +14,23 @@ $ hadoop jar target/bigdata2016w-0.1.0-SNAPSHOT.jar \
 gives me the following:
 
 ```
-1.4M	idx/part-r-00000
-1.5M	idx/part-r-00001
-1.4M	idx/part-r-00002
-1.6M	idx/part-r-00003
-5.8M	idx
+900K	idx/part-r-00000
+1004K	idx/part-r-00001
+852K	idx/part-r-00002
+1.1M	idx/part-r-00003
+3.8M	idx
 ```
-
-So the size of the inverted index is 5.8 Mb
 
 ## Question 2
 
 Running `du -h` on the Wikipedia collection index gives me the following:
 
 ```
-151M	idx/part-r-00000
-150M	idx/part-r-00002
-156M	idx/part-r-00001
-157M	idx/part-r-00003
-612M	idx
+107M	idx/part-r-00000
+105M	idx/part-r-00002
+112M	idx/part-r-00001
+112M	idx/part-r-00003
+434M	idx
 ```
 
 ## Question 3

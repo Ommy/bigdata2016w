@@ -17,9 +17,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
 
-import tl.lin.data.array.ArrayListWritable;
 import tl.lin.data.pair.PairOfInts;
-import tl.lin.data.pair.PairOfWritables;
 
 public class BooleanRetrievalCompressed extends Configured implements Tool {
     private List<MapFile.Reader> index;
@@ -114,20 +112,22 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
 
     private List<PairOfInts> fetchPostings(String term) throws IOException {
         Text key = new Text();
-        PairOfWritables<VIntWritable, BytesWritable> value = new PairOfWritables<>();
+        BytesWritable value = new BytesWritable();
         List<PairOfInts> list = new ArrayList<>();
 
         key.set(term);
 
         index.get(getHash(term)).get(key, value);
-        if (value.getKey().get() == 0) {
-            return list;
-        }
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(value.getRightElement().getBytes());
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(value.getBytes());
         DataInputStream dis = new DataInputStream(byteArrayInputStream);
 
+        int size = WritableUtils.readVInt(dis);
+        if (size == 0) {
+            return list;
+        }
+
         int docno = -1;
-        for (int i = 0; i< value.getKey().get(); i++) {
+        for (int i = 0; i< size; i++) {
             if (docno == -1) {
                 docno = WritableUtils.readVInt(dis);
             } else {

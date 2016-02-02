@@ -69,8 +69,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
     }
 
     private static class MyReducer extends
-            Reducer<PairOfStringLong, IntWritable, Text, PairOfWritables<VIntWritable, BytesWritable>> {
-        private final static VIntWritable DF = new VIntWritable();
+            Reducer<PairOfStringLong, IntWritable, Text, BytesWritable> {
         private static BytesWritable bW = new BytesWritable();
         private static String prev;
         private static int gap = -1;
@@ -90,6 +89,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
             if (prev != null && ! key.getLeftElement().contentEquals(prev)) {
                 int previousDoc = 0;
+                WritableUtils.writeVInt(dataOutStream, P.size());
                 for (PairOfLongInt tf: P) {
                     if (gap == -1) {
                         gap = (int) tf.getLeftElement();
@@ -100,9 +100,8 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
                     WritableUtils.writeVInt(dataOutStream, gap); // gap
                     WritableUtils.writeVInt(dataOutStream, tf.getRightElement());
                 }
-                DF.set(P.size());
                 bW = new BytesWritable(byteArrayOutputStream.toByteArray());
-                context.write(new Text(prev), new PairOfWritables<>(DF, bW));
+                context.write(new Text(prev), bW);
                 byteArrayOutputStream.reset();
                 dataOutStream.flush();
                 P.clear();
@@ -120,6 +119,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
             int previousDoc = 0;
+            WritableUtils.writeVInt(dataOutStream, P.size());
             for (PairOfLongInt tf: P) {
                 if (gap == -1) {
                     gap = (int) tf.getLeftElement();
@@ -130,9 +130,8 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
                 WritableUtils.writeVInt(dataOutStream, gap); // gap
                 WritableUtils.writeVInt(dataOutStream, tf.getRightElement());
             }
-            DF.set(P.size());
             bW = new BytesWritable(byteArrayOutputStream.toByteArray());
-            context.write(new Text(prev), new PairOfWritables<>(DF, bW));
+            context.write(new Text(prev), bW);
             byteArrayOutputStream.reset();
             dataOutStream.flush();
             P.clear();
@@ -193,7 +192,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         job.setMapOutputKeyClass(PairOfStringLong.class);
         job.setMapOutputValueClass(IntWritable.class);
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(PairOfWritables.class);
+        job.setOutputValueClass(BytesWritable.class);
         job.setOutputFormatClass(MapFileOutputFormat.class);
         job.setPartitionerClass(CompressionPartitioner.class);
 
