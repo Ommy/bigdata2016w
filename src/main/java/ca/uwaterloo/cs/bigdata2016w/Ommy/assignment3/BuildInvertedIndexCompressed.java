@@ -87,16 +87,16 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
                 throws IOException, InterruptedException {
             Iterator<IntWritable> iter = values.iterator();
 
-            if (prev != null && ! key.getLeftElement().contentEquals(prev)) {
+            if (prev != null && !key.getLeftElement().contentEquals(prev)) {
                 int previousDoc = 0;
                 WritableUtils.writeVInt(dataOutStream, P.size());
-                for (PairOfLongInt tf: P) {
+                for (PairOfLongInt tf : P) {
                     if (gap == -1) {
                         gap = (int) tf.getLeftElement();
                     } else {
                         gap = ((int) tf.getLeftElement()) - previousDoc;
                     }
-                    previousDoc = (int)tf.getLeftElement();
+                    previousDoc = (int) tf.getLeftElement();
                     WritableUtils.writeVInt(dataOutStream, gap); // gap
                     WritableUtils.writeVInt(dataOutStream, tf.getRightElement());
                 }
@@ -120,13 +120,13 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         protected void cleanup(Context context) throws IOException, InterruptedException {
             int previousDoc = 0;
             WritableUtils.writeVInt(dataOutStream, P.size());
-            for (PairOfLongInt tf: P) {
+            for (PairOfLongInt tf : P) {
                 if (gap == -1) {
                     gap = (int) tf.getLeftElement();
                 } else {
                     gap = ((int) tf.getLeftElement()) - previousDoc;
                 }
-                previousDoc = (int)tf.getLeftElement();
+                previousDoc = (int) tf.getLeftElement();
                 WritableUtils.writeVInt(dataOutStream, gap); // gap
                 WritableUtils.writeVInt(dataOutStream, tf.getRightElement());
             }
