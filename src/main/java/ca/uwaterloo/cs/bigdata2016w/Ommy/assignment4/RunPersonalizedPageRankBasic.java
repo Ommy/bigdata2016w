@@ -284,6 +284,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     private static final String END = "end";
     private static final String COMBINER = "useCombiner";
     private static final String INMAPPER_COMBINER = "useInMapperCombiner";
+    private static final String SOURCES = "sources";
 
     /**
      * Runs this tool.
@@ -303,6 +304,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
                 .withDescription("end iteration").create(END));
         options.addOption(OptionBuilder.withArgName("num").hasArg()
                 .withDescription("number of nodes").create(NUM_NODES));
+        options.addOption(OptionBuilder.withArgName("sources").hasArg()
+                .withDescription("list of source nodes").create(SOURCES));
 
         CommandLine cmdline;
         CommandLineParser parser = new GnuParser();
@@ -329,6 +332,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
         int s = Integer.parseInt(cmdline.getOptionValue(START));
         int e = Integer.parseInt(cmdline.getOptionValue(END));
         boolean useCombiner = cmdline.hasOption(COMBINER);
+        String sources = cmdline.getOptionValue(SOURCES);
 
         LOG.info("Tool name: RunPageRank");
         LOG.info(" - base path: " + basePath);

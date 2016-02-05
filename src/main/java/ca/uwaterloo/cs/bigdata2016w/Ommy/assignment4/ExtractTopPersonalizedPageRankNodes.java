@@ -31,8 +31,8 @@ import org.apache.log4j.Logger;
 import tl.lin.data.pair.PairOfObjectFloat;
 import tl.lin.data.queue.TopScoredObjects;
 
-public class FindMaxPageRankNodes extends Configured implements Tool {
-    private static final Logger LOG = Logger.getLogger(FindMaxPageRankNodes.class);
+public class ExtractTopPersonalizedPageRankNodes extends Configured implements Tool {
+    private static final Logger LOG = Logger.getLogger(ExtractTopPersonalizedPageRankNodes.class);
 
     private static class MyMapper extends
             Mapper<IntWritable, PageRankNode, IntWritable, FloatWritable> {
@@ -98,12 +98,13 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
         }
     }
 
-    public FindMaxPageRankNodes() {
+    public ExtractTopPersonalizedPageRankNodes() {
     }
 
     private static final String INPUT = "input";
     private static final String OUTPUT = "output";
     private static final String TOP = "top";
+    private static final String SOURCES = "sources";
 
     /**
      * Runs this tool.
@@ -118,6 +119,8 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
                 .withDescription("output path").create(OUTPUT));
         options.addOption(OptionBuilder.withArgName("num").hasArg()
                 .withDescription("top n").create(TOP));
+        options.addOption(OptionBuilder.withArgName("sources").hasArg()
+                .withDescription("list of sources").create(SOURCES));
 
         CommandLine cmdline;
         CommandLineParser parser = new GnuParser();
@@ -142,7 +145,7 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
         String outputPath = cmdline.getOptionValue(OUTPUT);
         int n = Integer.parseInt(cmdline.getOptionValue(TOP));
 
-        LOG.info("Tool name: " + FindMaxPageRankNodes.class.getSimpleName());
+        LOG.info("Tool name: " + ExtractTopPersonalizedPageRankNodes.class.getSimpleName());
         LOG.info(" - input: " + inputPath);
         LOG.info(" - output: " + outputPath);
         LOG.info(" - top: " + n);
@@ -152,8 +155,8 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
         conf.setInt("n", n);
 
         Job job = Job.getInstance(conf);
-        job.setJobName(FindMaxPageRankNodes.class.getName() + ":" + inputPath);
-        job.setJarByClass(FindMaxPageRankNodes.class);
+        job.setJobName(ExtractTopPersonalizedPageRankNodes.class.getName() + ":" + inputPath);
+        job.setJarByClass(ExtractTopPersonalizedPageRankNodes.class);
 
         job.setNumReduceTasks(1);
 
@@ -184,7 +187,7 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
      * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
      */
     public static void main(String[] args) throws Exception {
-        int res = ToolRunner.run(new FindMaxPageRankNodes(), args);
+        int res = ToolRunner.run(new ExtractTopPersonalizedPageRankNodes(), args);
         System.exit(res);
     }
 }

@@ -1,6 +1,7 @@
 package ca.uwaterloo.cs.bigdata2016w.Ommy.assignment4;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -47,6 +48,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
     private static class MyMapper extends Mapper<LongWritable, Text, IntWritable, PageRankNode> {
         private static final IntWritable nid = new IntWritable();
         private static final PageRankNode node = new PageRankNode();
+        private static List<String> sources = new ArrayList<>();
 
         @Override
         public void setup(Mapper<LongWritable, Text, IntWritable, PageRankNode>.Context context) {
@@ -55,13 +57,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
                 throw new RuntimeException(NODE_CNT_FIELD + " cannot be 0!");
             }
             node.setType(PageRankNode.Type.Complete);
-            for (String source: context.getConfiguration().get("sources").split(",")) {
-                if (node.getNodeId() == Integer.parseInt(source)) {
-                    node.setPageRank(1.0f);
-                    return;
-                }
-            }
-            node.setPageRank(0.0f);
+            sources = Arrays.asList(context.getConfiguration().get("sources").split(","));
         }
 
         @Override
@@ -90,6 +86,13 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
 
             if (arr.length > 1) {
                 context.getCounter("graph", "numActiveNodes").increment(1);
+            }
+
+            node.setPageRank(0.0f);
+            for (String source: sources) {
+                if (nid.get() == Integer.parseInt(source)) {
+                    node.setPageRank(1.0f);
+                }
             }
 
             context.write(nid, node);
@@ -140,7 +143,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
             return -1;
         }
 
-        String sources = SOURCES.trim();
+        String sources = cmdline.getOptionValue(SOURCES).trim();
 
         String inputPath = cmdline.getOptionValue(INPUT);
         String outputPath = cmdline.getOptionValue(OUTPUT);

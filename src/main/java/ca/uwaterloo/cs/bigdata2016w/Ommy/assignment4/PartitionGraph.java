@@ -6,7 +6,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -19,6 +18,7 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.partition.HashPartitioner;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
@@ -45,7 +45,6 @@ public class PartitionGraph extends Configured implements Tool {
     private static final String OUTPUT = "output";
     private static final String NUM_NODES = "numNodes";
     private static final String NUM_PARTITIONS = "numPartitions";
-    private static final String RANGE = "range";
 
     /**
      * Runs this tool.
@@ -53,8 +52,6 @@ public class PartitionGraph extends Configured implements Tool {
     @SuppressWarnings({"static-access"})
     public int run(String[] args) throws Exception {
         Options options = new Options();
-
-        options.addOption(new Option(RANGE, "use range partitioner"));
 
         options.addOption(OptionBuilder.withArgName("path").hasArg()
                 .withDescription("input path").create(INPUT));
@@ -89,14 +86,12 @@ public class PartitionGraph extends Configured implements Tool {
         String outPath = cmdline.getOptionValue(OUTPUT);
         int nodeCount = Integer.parseInt(cmdline.getOptionValue(NUM_NODES));
         int numParts = Integer.parseInt(cmdline.getOptionValue(NUM_PARTITIONS));
-        boolean useRange = cmdline.hasOption(RANGE);
 
         LOG.info("Tool name: " + PartitionGraph.class.getSimpleName());
         LOG.info(" - input dir: " + inPath);
         LOG.info(" - output dir: " + outPath);
         LOG.info(" - num partitions: " + numParts);
         LOG.info(" - node cnt: " + nodeCount);
-        LOG.info(" - use range partitioner: " + useRange);
 
         Configuration conf = getConf();
         conf.setInt("NodeCount", nodeCount);
@@ -119,9 +114,7 @@ public class PartitionGraph extends Configured implements Tool {
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(PageRankNode.class);
 
-//    if (useRange) {
-//      job.setPartitionerClass(RangePartitioner.class);
-//    }
+        job.setPartitionerClass(HashPartitioner.class);
 
         FileSystem.get(conf).delete(new Path(outPath), true);
 
