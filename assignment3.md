@@ -48,3 +48,19 @@ Running `du -h` on the Wikipedia collection index gives me the following:
 2. Criticism of Facebook
 
 
+Marks:
+Q1: 5
+Q2a:5
+Q2b:5
+Q3:5
+
+Q4:5
+Q5a:4
+Q5b:4
+Q6:4
+Linux Compile:5
+Altiscale Compile:5
+Total: 47
+
+Comments:
+- Altiscale queries print out full document
