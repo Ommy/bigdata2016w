@@ -88,12 +88,12 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
                 context.getCounter("graph", "numActiveNodes").increment(1);
             }
 
-            node.setPageRank(0.0f);
-            for (String source: sources) {
-                if (nid.get() == Integer.parseInt(source)) {
-                    node.setPageRank(1.0f);
+            node.setPageRank(Float.NEGATIVE_INFINITY);
+//            for (String source: sources) {
+                if (nid.get() == Integer.parseInt(sources.get(0))) {
+                    node.setPageRank(0);
                 }
-            }
+//            }
 
             context.write(nid, node);
         }

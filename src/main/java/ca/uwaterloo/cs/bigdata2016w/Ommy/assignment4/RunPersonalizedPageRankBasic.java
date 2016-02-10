@@ -28,13 +28,12 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
 import tl.lin.data.array.ArrayListOfIntsWritable;
-import tl.lin.data.map.HMapIF;
-import tl.lin.data.map.MapIF;
 
 import com.google.common.base.Preconditions;
 
@@ -253,13 +252,32 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
                 throws IOException, InterruptedException {
             float p = node.getPageRank();
 
-            float jump = (float) (Math.log(ALPHA) - Math.log(nodeCnt));
-            float link = (float) Math.log(1.0f - ALPHA)
-                    + sumLogProbs(p, (float) (Math.log(missingMass) - Math.log(nodeCnt)));
-
-            p = sumLogProbs(jump, link);
+            int sourceNode = context.getConfiguration().getInt("sourceNode", 0);
+            float jump = (float) Math.log(ALPHA);
+            /**
+             * Whenever the model makes a random jump, the random jump is always back to the source node;
+             * this is unlike in ordinary PageRank, where there is an equal probability of jumping to any node.
+             *
+             * All mass lost in the dangling nodes are put back into the source node; this is unlike in ordinary
+             * PageRank, where the missing mass is evenly distributed across all nodes.
+             * if (isSourceNode(nid.get())) {
+             +        float jump = (float) (Math.log(ALPHA));
+             +        float link = (float) Math.log(1.0f - ALPHA)
+             +                + sumLogProbs(p, (float) (Math.log(missingMass)));
+             +
+             +        p = sumLogProbs(jump, link);
+             +      } else {
+             +        p = p + (float) Math.log(1.0f - ALPHA);
+             +      }
+             */
+            float link;
+            if (node.getNodeId() == sourceNode) {
+                link = (float) Math.log(1.0f - ALPHA) + sumLogProbs(p, (float) Math.log(missingMass));
+                p = sumLogProbs(jump, link);
+            } else {
+                p = p + (float) Math.log(1.0f - ALPHA);
+            }
             node.setPageRank(p);
-
             context.write(nid, node);
         }
     }
@@ -333,6 +351,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
         int e = Integer.parseInt(cmdline.getOptionValue(END));
         boolean useCombiner = cmdline.hasOption(COMBINER);
         String sources = cmdline.getOptionValue(SOURCES);
+        int source = Integer.parseInt(sources.trim().split(",")[0]);
 
         LOG.info("Tool name: RunPageRank");
         LOG.info(" - base path: " + basePath);
@@ -343,7 +362,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
         // Iterate PageRank.
         for (int i = s; i < e; i++) {
-            iteratePageRank(i, i + 1, basePath, n, useCombiner);
+            iteratePageRank(i, i + 1, basePath, n, useCombiner, source);
         }
 
         return 0;
@@ -351,21 +370,21 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
     // Run each iteration.
     private void iteratePageRank(int i, int j, String basePath, int numNodes,
-                                 boolean useCombiner) throws Exception {
+                                 boolean useCombiner, int source) throws Exception {
         // Each iteration consists of two phases (two MapReduce jobs).
 
         // Job 1: distribute PageRank mass along outgoing edges.
-        float mass = phase1(i, j, basePath, numNodes, useCombiner);
+        float mass = phase1(i, j, basePath, numNodes, useCombiner, source);
 
         // Find out how much PageRank mass got lost at the dangling nodes.
         float missing = 1.0f - (float) StrictMath.exp(mass);
 
         // Job 2: distribute missing mass, take care of random jump factor.
-        phase2(i, j, missing, basePath, numNodes);
+        phase2(i, j, missing, basePath, numNodes, source);
     }
 
     private float phase1(int i, int j, String basePath, int numNodes,
-                         boolean useCombiner) throws Exception {
+                         boolean useCombiner, int source) throws Exception {
         Job job = Job.getInstance(getConf());
         job.setJobName("PageRank:Basic:iteration" + j + ":Phase1");
         job.setJarByClass(RunPersonalizedPageRankBasic.class);
@@ -392,6 +411,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
         int numReduceTasks = numPartitions;
 
         job.getConfiguration().setInt("NodeCount", numNodes);
+        job.getConfiguration().setInt("sourceNode", source);
         job.getConfiguration().setBoolean("mapred.map.tasks.speculative.execution", false);
         job.getConfiguration().setBoolean("mapred.reduce.tasks.speculative.execution", false);
         //job.getConfiguration().set("mapred.child.java.opts", "-Xmx2048m");
@@ -430,14 +450,16 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
         FileSystem fs = FileSystem.get(getConf());
         for (FileStatus f : fs.listStatus(new Path(outm))) {
             FSDataInputStream fin = fs.open(f.getPath());
-            mass = sumLogProbs(mass, fin.readFloat());
+            float x = fin.readFloat();
+            mass = sumLogProbs(mass, x);
+            System.out.println("READ IN FLOAT: " + x + " -- NEW MASS: " + mass);
             fin.close();
         }
-
+        System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ MASS: " + mass);
         return mass;
     }
 
-    private void phase2(int i, int j, float missing, String basePath, int numNodes) throws Exception {
+    private void phase2(int i, int j, float missing, String basePath, int numNodes, int source) throws Exception {
         Job job = Job.getInstance(getConf());
         job.setJobName("PageRank:Basic:iteration" + j + ":Phase2");
         job.setJarByClass(RunPersonalizedPageRankBasic.class);
@@ -456,6 +478,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
         job.getConfiguration().setBoolean("mapred.reduce.tasks.speculative.execution", false);
         job.getConfiguration().setFloat("MissingMass", (float) missing);
         job.getConfiguration().setInt("NodeCount", numNodes);
+        job.getConfiguration().setInt("sourceNode", source);
 
         job.setNumReduceTasks(0);
 
