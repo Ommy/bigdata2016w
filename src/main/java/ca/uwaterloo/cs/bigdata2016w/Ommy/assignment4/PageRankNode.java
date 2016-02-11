@@ -7,9 +7,15 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Writable;
 
+import tl.lin.data.array.ArrayListOfFloatsWritable;
 import tl.lin.data.array.ArrayListOfIntsWritable;
 
 /**
@@ -37,19 +43,29 @@ public class PageRankNode implements Writable {
 
     private Type type;
     private int nodeid;
-    private float pagerank;
+    private ArrayListOfFloatsWritable pagerank;
     private ArrayListOfIntsWritable adjacenyList;
 
     public PageRankNode() {
+        pagerank = new ArrayListOfFloatsWritable(1);
     }
 
-    public float getPageRank() {
-        return pagerank;
+    public PageRankNode(int i ) {
+        pagerank = new ArrayListOfFloatsWritable(i);
     }
 
-    public void setPageRank(float p) {
-        this.pagerank = p;
+    public float getPageRank(int i) {
+        return pagerank.get(i);
     }
+
+    public void setPageRankAtIndex(float p, int i) {
+        this.pagerank.set(i, p);
+    }
+    public void setPageRank(float p, int i) {
+        this.pagerank.add(p);
+    }
+
+    public ArrayListOfFloatsWritable getPageRankList() { return this.pagerank; }
 
     public int getNodeId() {
         return nodeid;
@@ -58,6 +74,8 @@ public class PageRankNode implements Writable {
     public void setNodeId(int n) {
         this.nodeid = n;
     }
+
+    public void setSourcesSize(int n) { this.pagerank = new ArrayListOfFloatsWritable(n);}
 
     public ArrayListOfIntsWritable getAdjacenyList() {
         return adjacenyList;
@@ -87,16 +105,15 @@ public class PageRankNode implements Writable {
         nodeid = in.readInt();
 
         if (type.equals(Type.Mass)) {
-            pagerank = in.readFloat();
+            pagerank.readFields(in);
             return;
         }
 
         if (type.equals(Type.Complete)) {
-            pagerank = in.readFloat();
+            pagerank.readFields(in);
         }
 
         adjacenyList = new ArrayListOfIntsWritable();
-        adjacenyList.readFields(in);
     }
 
     /**
@@ -110,12 +127,12 @@ public class PageRankNode implements Writable {
         out.writeInt(nodeid);
 
         if (type.equals(Type.Mass)) {
-            out.writeFloat(pagerank);
+            pagerank.write(out);
             return;
         }
 
         if (type.equals(Type.Complete)) {
-            out.writeFloat(pagerank);
+            pagerank.write(out);
         }
 
         adjacenyList.write(out);
@@ -123,7 +140,7 @@ public class PageRankNode implements Writable {
 
     @Override
     public String toString() {
-        return String.format("{%d %.4f %s}", nodeid, pagerank, (adjacenyList == null ? "[]"
+        return String.format("{%d %s %s}", nodeid, pagerank.toString(), (adjacenyList == null ? "[]"
                 : adjacenyList.toString(10)));
     }
 

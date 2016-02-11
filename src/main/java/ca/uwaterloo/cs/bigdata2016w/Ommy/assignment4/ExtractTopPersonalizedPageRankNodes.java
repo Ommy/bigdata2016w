@@ -1,8 +1,10 @@
 package ca.uwaterloo.cs.bigdata2016w.Ommy.assignment4;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -36,29 +38,41 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 
     private static class MyMapper extends
             Mapper<IntWritable, PageRankNode, IntWritable, FloatWritable> {
-        private TopScoredObjects<Integer> queue;
+        private List<TopScoredObjects<Integer>> queue = new ArrayList<>();
+        private int numSources;
 
         @Override
         public void setup(Context context) throws IOException {
             int k = context.getConfiguration().getInt("n", 100);
-            queue = new TopScoredObjects<Integer>(k);
+            numSources = context.getConfiguration().getInt("numSources", 1);
+            for (int i = 0; i < numSources; i++) {
+                queue.add(new TopScoredObjects<Integer>(k));
+            }
         }
 
         @Override
         public void map(IntWritable nid, PageRankNode node, Context context) throws IOException,
                 InterruptedException {
-            queue.add(node.getNodeId(), node.getPageRank());
+            for (int i = 0; i < numSources; i++) {
+                queue.get(i).add(node.getNodeId(), node.getPageRank(i));
+            }
         }
 
         @Override
         public void cleanup(Context context) throws IOException, InterruptedException {
             IntWritable key = new IntWritable();
             FloatWritable value = new FloatWritable();
-
-            for (PairOfObjectFloat<Integer> pair : queue.extractAll()) {
-                key.set(pair.getLeftElement());
-                value.set((float)Math.exp(pair.getRightElement()));
-                context.write(key, value);
+            String[] sources = context.getConfiguration().get("sources").split(",");
+            int i = 0;
+            for (TopScoredObjects tso: queue) {
+                System.out.println("Source: " + sources[i]);
+                for (PairOfObjectFloat<Integer> pair : tso.extractAll()) {
+                    key.set(pair.getLeftElement());
+                    value.set((float) Math.exp(pair.getRightElement()));
+                    context.write(key, value);
+                    System.out.println(String.format("%.5f %d", pair.getRightElement(), pair.getLeftElement()));
+                }
+                i++;
             }
         }
     }
@@ -144,6 +158,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
         String inputPath = cmdline.getOptionValue(INPUT);
         String outputPath = cmdline.getOptionValue(OUTPUT);
         int n = Integer.parseInt(cmdline.getOptionValue(TOP));
+        String[] sources = cmdline.getOptionValue(SOURCES).split(",");
 
         LOG.info("Tool name: " + ExtractTopPersonalizedPageRankNodes.class.getSimpleName());
         LOG.info(" - input: " + inputPath);
@@ -153,6 +168,8 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
         Configuration conf = getConf();
         conf.setInt("mapred.min.split.size", 1024 * 1024 * 1024);
         conf.setInt("n", n);
+        conf.setInt("numSources", sources.length);
+        conf.set("sources", cmdline.getOptionValue(SOURCES));
 
         Job job = Job.getInstance(conf);
         job.setJobName(ExtractTopPersonalizedPageRankNodes.class.getName() + ":" + inputPath);
