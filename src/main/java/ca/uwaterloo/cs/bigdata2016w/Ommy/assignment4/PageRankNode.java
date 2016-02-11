@@ -50,7 +50,7 @@ public class PageRankNode implements Writable {
         pagerank = new ArrayListOfFloatsWritable(1);
     }
 
-    public PageRankNode(int i ) {
+    public PageRankNode(int i) {
         pagerank = new ArrayListOfFloatsWritable(i);
     }
 
@@ -61,11 +61,14 @@ public class PageRankNode implements Writable {
     public void setPageRankAtIndex(float p, int i) {
         this.pagerank.set(i, p);
     }
+
     public void setPageRank(float p, int i) {
         this.pagerank.add(p);
     }
 
-    public ArrayListOfFloatsWritable getPageRankList() { return this.pagerank; }
+    public ArrayListOfFloatsWritable getPageRankList() {
+        return this.pagerank;
+    }
 
     public int getNodeId() {
         return nodeid;
@@ -75,7 +78,9 @@ public class PageRankNode implements Writable {
         this.nodeid = n;
     }
 
-    public void setSourcesSize(int n) { this.pagerank = new ArrayListOfFloatsWritable(n);}
+    public void setSourcesSize(int n) {
+        this.pagerank = new ArrayListOfFloatsWritable(n);
+    }
 
     public ArrayListOfIntsWritable getAdjacenyList() {
         return adjacenyList;
@@ -114,6 +119,7 @@ public class PageRankNode implements Writable {
         }
 
         adjacenyList = new ArrayListOfIntsWritable();
+        adjacenyList.readFields(in);
     }
 
     /**

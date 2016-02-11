@@ -96,7 +96,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
                 node.setPageRank(Float.NEGATIVE_INFINITY, i);
             }
             int i = 0;
-            for (String source: sources) {
+            for (String source : sources) {
                 if (nid.get() == Integer.parseInt(source)) {
                     node.setPageRankAtIndex(0, i);
                 }

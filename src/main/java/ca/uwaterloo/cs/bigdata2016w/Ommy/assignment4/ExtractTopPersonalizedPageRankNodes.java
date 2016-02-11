@@ -62,36 +62,39 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
         public void cleanup(Context context) throws IOException, InterruptedException {
             IntWritable key = new IntWritable();
             FloatWritable value = new FloatWritable();
-            String[] sources = context.getConfiguration().get("sources").split(",");
-            int i = 0;
-            for (TopScoredObjects tso: queue) {
-                System.out.println("Source: " + sources[i]);
+
+            for (TopScoredObjects tso : queue) {
                 for (PairOfObjectFloat<Integer> pair : tso.extractAll()) {
                     key.set(pair.getLeftElement());
-                    value.set((float) Math.exp(pair.getRightElement()));
+                    value.set(pair.getRightElement());
                     context.write(key, value);
-                    System.out.println(String.format("%.5f %d", pair.getRightElement(), pair.getLeftElement()));
                 }
-                i++;
             }
         }
     }
 
     private static class MyReducer extends
             Reducer<IntWritable, FloatWritable, IntWritable, FloatWritable> {
-        private static TopScoredObjects<Integer> queue;
+        private static List<TopScoredObjects<Integer>> queue;
+        private static int numSources;
 
         @Override
         public void setup(Context context) throws IOException {
             int k = context.getConfiguration().getInt("n", 100);
-            queue = new TopScoredObjects<Integer>(k);
+            numSources = context.getConfiguration().getInt("numSources", 1);
+            queue = new ArrayList<>();
+            for (int i = 0; i < numSources; i++) {
+                queue.add(new TopScoredObjects<Integer>(k));
+            }
         }
 
         @Override
         public void reduce(IntWritable nid, Iterable<FloatWritable> iterable, Context context)
                 throws IOException {
             Iterator<FloatWritable> iter = iterable.iterator();
-            queue.add(nid.get(), iter.next().get());
+            for (int i = 0; i < numSources; i++) {
+                queue.get(i).add(nid.get(), iter.next().get());
+            }
 
             // Shouldn't happen. Throw an exception.
             if (iter.hasNext()) {
@@ -103,11 +106,18 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
         public void cleanup(Context context) throws IOException, InterruptedException {
             IntWritable key = new IntWritable();
             FloatWritable value = new FloatWritable();
+            String[] sources = context.getConfiguration().get("sources").split(",");
+            int i = 0;
 
-            for (PairOfObjectFloat<Integer> pair : queue.extractAll()) {
-                key.set(pair.getLeftElement());
-                value.set(pair.getRightElement());
-                context.write(key, value);
+            for (TopScoredObjects tso : queue) {
+                System.out.println("Source: " + sources[i]);
+                for (PairOfObjectFloat<Integer> pair : tso.extractAll()) {
+                    key.set(pair.getLeftElement());
+                    value.set((float) Math.exp(pair.getRightElement()));
+                    context.write(key, value);
+                    System.out.println(String.format("%.5f %d", value.get(), pair.getLeftElement()));
+                }
+                i++;
             }
         }
     }
