@@ -22,12 +22,12 @@ object Q4 extends DateChecker{
     val conf = new SparkConf().setAppName("Q1")
     val sc = new SparkContext(conf)
 
-    val lineitem = sc.textFile(args.input() + "/lineitem.tbl")
-    val orders = sc.textFile(args.input() + "/orders.tbl")
-    val customer = sc.textFile(args.input() + "/customer.tbl")
-    val nation = sc.textFile(args.input() + "/nation.tbl")
+    val lineitem = sc.textFile(args.input() + "/lineitem.tbl", 10)
+    val orders = sc.textFile(args.input() + "/orders.tbl", 10)
+    val customer = sc.textFile(args.input() + "/customer.tbl", 10)
+    val nation = sc.textFile(args.input() + "/nation.tbl", 10)
 
-    val myPartitioner = new MyPartitioner(args.reducers())
+    val myPartitioner = new MyPartitioner(10)
 
     val date = args.date()
     val shipDateColumn = 10
@@ -98,6 +98,7 @@ object Q4 extends DateChecker{
       .reduceByKey(_+_)
       .repartitionAndSortWithinPartitions(myPartitioner)
       .sortBy((f) => f._1._1.toInt)
+      .collect()
       .foreach((f) => {
         println("(" + f._1._1 + "," + f._1._2 + "," + f._2 + ")")
       })

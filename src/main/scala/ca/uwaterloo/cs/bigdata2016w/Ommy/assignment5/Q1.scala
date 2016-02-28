@@ -10,7 +10,7 @@ object Q1 extends DateChecker {
     val conf = new SparkConf().setAppName("Q1")
     val sc = new SparkContext(conf)
 
-    val textFile = sc.textFile(args.input() + "/lineitem.tbl")
+    val textFile = sc.textFile(args.input() + "/lineitem.tbl", 10)
     val shipDateColumn = 10
     val date = args.date()
 

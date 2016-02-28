@@ -10,9 +10,9 @@ object Q3 extends DateChecker{
     val conf = new SparkConf().setAppName("Q3")
     val sc = new SparkContext(conf)
 
-    val lineitem = sc.textFile(args.input() + "/lineitem.tbl", args.reducers())
-    val parts = sc.textFile(args.input() + "/part.tbl", args.reducers())
-    val supplier = sc.textFile(args.input() + "/supplier.tbl", args.reducers())
+    val lineitem = sc.textFile(args.input() + "/lineitem.tbl", 10)
+    val parts = sc.textFile(args.input() + "/part.tbl", 10)
+    val supplier = sc.textFile(args.input() + "/supplier.tbl", 10)
     val shipDateColumn = 10
     val partKeyColumn = 1
     val suppKeyColumn = 2
@@ -49,7 +49,10 @@ object Q3 extends DateChecker{
           List()
         }
       })
-      .map((m) => (m._3, (m._2, m._1)))
+      .mapPartitions((m) => {
+        m.map(f => (f._3, (f._2, f._1)))
+      })
+//      .map((m) => (m._3, (m._2, m._1)))
       .sortBy(f => f._1.toInt)
       .take(20)
       .foreach((f) => {
