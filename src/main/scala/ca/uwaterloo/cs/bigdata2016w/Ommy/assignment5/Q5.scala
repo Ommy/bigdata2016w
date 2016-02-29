@@ -76,36 +76,5 @@ object Q5 extends DateChecker{
       .foreach(f => {
         println(f._1._1 + "," + f._2 + "," + f._1._2)
       })
-
-
-//    orders
-//      .flatMap(line => {
-//        val tokens = line.split("\\|")
-//        // (orderkey, custkey)
-//        List((tokens.head, tokens(1)))
-//      })
-//      .map((m) => (m._1, m._2))
-//      .cogroup(
-//        lineitem
-//        .flatMap(line => {
-//          val tokens:Array[String] = line.split("\\|")
-//          val shipDate = tokens(shipDateColumn)
-//          List((tokens.head, shipDate))
-//        })
-//        // (orderkey, 1)
-//        .map((m) => (m._1, m._2))
-//      )
-//      .filter((f) => f._2._2.toList.nonEmpty)
-//      .map((m) => {
-//        val nationkey = customerMapping.value.get(m._2._1.toList.head).get
-//        if (nationMapping.value.get(nationkey).get.equals())
-//        ((nationkey, nationMapping.value.get(nationkey).get) , 1)
-//      })
-//      .reduceByKey(_+_)
-//      .repartitionAndSortWithinPartitions(myPartitioner)
-//      .sortBy((f) => f._1._1.toInt)
-//      .foreach((f) => {
-//        println("(" + f._1._1 + "," + f._1._2 + "," + f._2 + ")")
-//      })
   }
 }
