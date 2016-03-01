@@ -61,6 +61,7 @@ object Q5 extends DateChecker{
       .map(m => ((m._1, m._2), 1))
       .reduceByKey(_+_)
       .sortBy(t => t._1._1)
+      .collect()
       .foreach(f => {
         println("(" + f._1._1 + "," + f._2 + "," + f._1._2 + ")")
       })
