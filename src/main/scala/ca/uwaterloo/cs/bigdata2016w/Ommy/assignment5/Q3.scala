@@ -50,9 +50,9 @@ object Q3 extends DateChecker{
         }
       })
       .mapPartitions((m) => {
-        m.map(f => (f._3, (f._2, f._1)))
+        m.map(f => (f._3.toInt, (f._2, f._1)))
       })
-      .sortBy(f => f._1.toInt)
+      .sortByKey(ascending = true)
       .take(20)
       .foreach((f) => {
         println("(" + f._1 + "," + f._2._1 + "," + f._2._2 + ")")

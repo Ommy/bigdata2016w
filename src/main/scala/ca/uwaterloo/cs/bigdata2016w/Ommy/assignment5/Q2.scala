@@ -35,16 +35,14 @@ object Q2 extends DateChecker{
             }
           })
           .map((m) => (m._1, m._2)))
-      .filter((f) => f._2._2.toList.nonEmpty)
-      .mapPartitions((m) => {
-        m.map(f => {
-          (f._1, f._2._1.toList.head)
-        })
+      .filter((f) => f._2._2.nonEmpty)
+      .map((m) => {
+        (m._1.toInt, m._2._1.head)
       })
-      .sortBy(f => f._1.toInt)
+      .sortByKey(ascending = true)
       .take(20)
       .foreach((f) => {
-        println("(" + f._1 + "," + f._2 + ")")
+        println("(" + f._2 + "," + f._1 + ")")
       })
 
   }

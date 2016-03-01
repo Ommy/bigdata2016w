@@ -15,24 +15,12 @@ object Q5 extends DateChecker{
     val customer = sc.textFile(args.input() + "/customer.tbl")
     val nation = sc.textFile(args.input() + "/nation.tbl")
 
-    val myPartitioner = new MyPartitioner(args.reducers())
-
     val shipDateColumn = 10
 
     val nationNameIdx = 1
     val customerNationKeyIdx = 3
 
     // Nation and Customer will fit into memory
-
-    val nationMapping =
-      sc.broadcast(
-        nation
-          .flatMap(line => {
-            val tokens = line.split("\\|")
-            List((tokens.head, tokens(nationNameIdx)))
-          })
-          .map((m) => (m._1, m._2))
-          .collectAsMap())
 
     val customerMapping =
       sc.broadcast(
@@ -48,10 +36,10 @@ object Q5 extends DateChecker{
     orders
       .flatMap(line => {
         val tokens = line.split("\\|")
-        val nation = nationMapping.value.get(customerMapping.value.get(tokens(1)).get).get
-        if (List("CANADA", "UNITED STATES") contains nation) {
-          // orderkey -> (custkey, nation)
-          List((tokens.head, (tokens(1), nation)))
+        if (customerMapping.value.get(tokens(1)).get.equals("3")) {
+          List((tokens.head, (tokens(1), "CANADA")))
+        } else if (customerMapping.value.get(tokens(1)).get.equals("24")) {
+          List((tokens.head, (tokens(1), "UNITED STATES")))
         } else {
           List()
         }
@@ -74,7 +62,7 @@ object Q5 extends DateChecker{
       .reduceByKey(_+_)
       .sortBy(t => t._1._1)
       .foreach(f => {
-        println(f._1._1 + "," + f._2 + "," + f._1._2)
+        println("(" + f._1._1 + "," + f._2 + "," + f._1._2 + ")")
       })
   }
 }

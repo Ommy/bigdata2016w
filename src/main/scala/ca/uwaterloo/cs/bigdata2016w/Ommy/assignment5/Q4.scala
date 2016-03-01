@@ -3,18 +3,6 @@ package ca.uwaterloo.cs.bigdata2016w.Ommy.assignment5
 import ca.uwaterloo.cs.bigdata2016w.Ommy.util.{DateChecker, Conf}
 import org.apache.spark.{Partitioner, SparkContext, SparkConf}
 
-class MyPartitioner( numberOfReducers: Int) extends Partitioner {
-
-  override def getPartition(key: Any): Int = {
-    val k = key.asInstanceOf[(String, String)]
-    return (k._1.toInt.hashCode() & Int.MaxValue) % numberOfReducers
-  }
-
-  override def numPartitions: Int = {
-    return numberOfReducers
-  }
-}
-
 object Q4 extends DateChecker{
 
   def main(argv: Array[String]): Unit = {
@@ -27,25 +15,11 @@ object Q4 extends DateChecker{
     val customer = sc.textFile(args.input() + "/customer.tbl", 10)
     val nation = sc.textFile(args.input() + "/nation.tbl", 10)
 
-    val myPartitioner = new MyPartitioner(10)
-
     val date = args.date()
     val shipDateColumn = 10
 
     val nationNameIdx = 1
     val customerNationKeyIdx = 3
-
-    // Nation and Customer will fit into memory
-    /**
-     * select n_nationkey, n_name, count(*) from lineitem, orders, customer, nation
-        where
-          l_orderkey = o_orderkey and
-          o_custkey = c_custkey and
-          c_nationkey = n_nationkey and
-          l_shipdate = 'YYYY-MM-DD'
-        group by n_nationkey, n_name
-        order by n_nationkey asc;
-     */
 
     val nationMapping =
       sc.broadcast(
@@ -95,8 +69,7 @@ object Q4 extends DateChecker{
         val nationkey = customerMapping.value.get(m._2._1.toList.head).get
         ((nationkey, nationMapping.value.get(nationkey).get) , 1)
       })
-      .reduceByKey(_+_)
-      .repartitionAndSortWithinPartitions(myPartitioner)
+      .reduceByKey(_+_, numPartitions = 10)
       .sortBy((f) => f._1._1.toInt)
       .collect()
       .foreach((f) => {
