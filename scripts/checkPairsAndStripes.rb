@@ -17,7 +17,7 @@ end
 pairs_output = Hash[pairs_output.sort_by{|k,v| v.to_f}.reverse]
 stripes_output = Hash[stripes_output.sort_by{|k,v| v.to_f}]
 
-pairs_arr = pairs_output.to_a
+# pairs_arr = pairs_output.to_a
 
 tears_words = {}
 death_words = {}
