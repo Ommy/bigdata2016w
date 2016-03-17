@@ -55,10 +55,9 @@ object TrainSpamClassifier {
         })
       })
       w.flatMap(d => {
-        List((d._1, d._2))
+        List((d._1, d._2).toString())
       })
     })
-    .map(x => x.toString())
     .saveAsTextFile(args.model())
 
   }
