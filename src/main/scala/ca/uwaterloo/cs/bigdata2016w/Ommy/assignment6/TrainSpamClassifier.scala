@@ -1,7 +1,5 @@
 package ca.uwaterloo.cs.bigdata2016w.Ommy.assignment6
 
-import java.util.StringTokenizer
-
 import ca.uwaterloo.cs.bigdata2016w.Ommy.util.Conf
 import org.apache.spark.{SparkContext, SparkConf}
 import scala.math._

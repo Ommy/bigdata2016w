@@ -10,4 +10,5 @@ class Conf(args: Seq[String]) extends ScallopConf(args) with Tokenizer {
   val imc = opt[Boolean](descr = "use in-mapper combining", required = false)
   val date = opt[String](descr = "date for query", required = false)
   val model = opt[String](descr = "model for query", required = false)
+  val method = opt[String](descr = "method for query", required = false)
 }
