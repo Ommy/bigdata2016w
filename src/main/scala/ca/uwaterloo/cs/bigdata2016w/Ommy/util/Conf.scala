@@ -11,4 +11,5 @@ class Conf(args: Seq[String]) extends ScallopConf(args) with Tokenizer {
   val date = opt[String](descr = "date for query", required = false)
   val model = opt[String](descr = "model for query", required = false)
   val method = opt[String](descr = "method for query", required = false)
+  val shuffle = opt[Boolean](descr = "run shuffling", required = false, default = Some(false))
 }

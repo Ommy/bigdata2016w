@@ -3,6 +3,7 @@ package ca.uwaterloo.cs.bigdata2016w.Ommy.assignment6
 import ca.uwaterloo.cs.bigdata2016w.Ommy.util.Conf
 import org.apache.spark.{SparkContext, SparkConf}
 import scala.math._
+import scala.util.Random
 
 
 object TrainSpamClassifier {
@@ -32,12 +33,19 @@ object TrainSpamClassifier {
     val LABEL_IDX = 1
     val FEATURES_IDX = 2
 
+    val doRandom:Boolean = args.shuffle()
 
-    val trained = textFile.map(line =>{
+    val x = textFile.map(line =>{
       val tokens = line.split(" ")
-      val features:Array[Int]= tokens.slice(FEATURES_IDX, tokens.length).map(x => x.toInt)
-      (0, (tokens(DOCID_IDX), tokens(LABEL_IDX), features))
-    }).groupByKey(1)
+      var sortedOn = 0
+      val random = Random
+      if (doRandom) {
+        sortedOn = random.nextInt(Integer.MAX_VALUE)
+      }
+      (0, (tokens(DOCID_IDX), tokens(LABEL_IDX), tokens.slice(FEATURES_IDX, tokens.length).map(x => x.toInt), sortedOn))
+    })
+    .sortBy(x => x._2._4)
+    .groupByKey(1)
     .flatMap(x => {
       // Update the weights as follows:
       x._2.foreach(p => {
