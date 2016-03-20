@@ -9,4 +9,7 @@ class Conf(args: Seq[String]) extends ScallopConf(args) with Tokenizer {
   val reducers = opt[Int](descr = "number of reducers", required = false, default = Some(1))
   val imc = opt[Boolean](descr = "use in-mapper combining", required = false)
   val date = opt[String](descr = "date for query", required = false)
+  val model = opt[String](descr = "model for query", required = false)
+  val method = opt[String](descr = "method for query", required = false)
+  val shuffle = opt[Boolean](descr = "run shuffling", required = false, default = Some(false))
 }
