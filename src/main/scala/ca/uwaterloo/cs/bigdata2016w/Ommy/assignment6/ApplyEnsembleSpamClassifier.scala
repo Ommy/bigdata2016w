@@ -27,6 +27,8 @@ object ApplyEnsembleSpamClassifier {
   def getVote(value:Double): Int = {
     if (value.compareTo(0.0) > 0) {
       1
+    } else if (value.compareTo(0.0) == 0){
+      0
     } else {
       -1
     }
