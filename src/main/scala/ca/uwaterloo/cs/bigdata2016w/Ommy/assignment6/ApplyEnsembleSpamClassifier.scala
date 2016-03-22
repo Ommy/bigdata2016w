@@ -66,9 +66,9 @@ object ApplyEnsembleSpamClassifier {
                     .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3))
           val vote:Integer = getVote(resultTuple._1) + getVote(resultTuple._2) + getVote(resultTuple._3)
           if (vote > 0) {
-            (f._1, f._2._1, result, "spam")
+            (f._1, f._2._1, vote, "spam")
           } else {
-            (f._1, f._2._1, result, "ham")
+            (f._1, f._2._1, vote, "ham")
           }
         }
       })
