@@ -139,11 +139,11 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
 
         LOG.info("Tool: " + BuildInvertedIndexHBase.class.getSimpleName());
         LOG.info(" - input path: " + args.input);
+        LOG.info(" - output table: " + args.table);
+        LOG.info(" - config: " + args.config);
+        LOG.info(" - number of reducers: " + args.numReducers);
 
-        Job job = Job.getInstance(getConf());
-        job.setJobName(BuildInvertedIndexHBase.class.getSimpleName());
-        job.setJarByClass(BuildInvertedIndexHBase.class);
-
+        // If the table doesn't already exist, create it.
         Configuration conf = getConf();
         conf.addResource(new Path(args.config));
 
@@ -167,6 +167,10 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
         LOG.info(String.format("Successfully created table '%s'", args.table));
 
         admin.close();
+
+        Job job = Job.getInstance(getConf());
+        job.setJobName(BuildInvertedIndexHBase.class.getSimpleName());
+        job.setJarByClass(BuildInvertedIndexHBase.class);
 
         job.setNumReduceTasks(args.numReducers);
 
