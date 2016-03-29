@@ -1,15 +1,19 @@
 package ca.uwaterloo.cs.bigdata2016w.Ommy.assignment7;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.StringTokenizer;
+import java.util.*;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -36,6 +40,9 @@ import tl.lin.data.pair.PairOfWritables;
 
 public class BuildInvertedIndexHBase extends Configured implements Tool {
     private static final Logger LOG = Logger.getLogger(BuildInvertedIndexHBase.class);
+
+    public static final String[] FAMILIES = { "p" };
+    public static final byte[] CF = FAMILIES[0].getBytes();
 
     private static class MyMapper extends Mapper<LongWritable, Text, Text, PairOfInts> {
         private static final Text WORD = new Text();
@@ -90,8 +97,10 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
             Collections.sort(postings);
 
             DF.set(df);
-            context.write(key,
-                    new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>(DF, postings));
+            Put put = new Put(Bytes.toBytes(key.toString()));
+            for (PairOfInts pair : postings) {
+                put.add(CF, Bytes.toBytes(pair.getLeftElement()), Bytes.toBytes(pair.getRightElement()));
+            }
         }
     }
 
@@ -103,6 +112,12 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
 
         @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
         public String output;
+
+        @Option(name = "-table", metaVar = "[name]", required = true, usage = "HBase table to store output")
+        public String table;
+
+        @Option(name = "-config", metaVar = "[path]", required = true, usage = "HBase config")
+        public String config;
     }
 
     /**
@@ -127,6 +142,30 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
         Job job = Job.getInstance(getConf());
         job.setJobName(BuildInvertedIndexHBase.class.getSimpleName());
         job.setJarByClass(BuildInvertedIndexHBase.class);
+
+        Configuration conf = getConf();
+        conf.addResource(new Path(args.config));
+
+        Configuration hbaseConfig = HBaseConfiguration.create(conf);
+        HBaseAdmin admin = new HBaseAdmin(hbaseConfig);
+
+        if (admin.tableExists(args.table)) {
+            LOG.info(String.format("Table '%s' exists: dropping table and recreating.", args.table));
+            LOG.info(String.format("Disabling table '%s'", args.table));
+            admin.disableTable(args.table);
+            LOG.info(String.format("Droppping table '%s'", args.table));
+            admin.deleteTable(args.table);
+        }
+
+        HTableDescriptor tableDesc = new HTableDescriptor(TableName.valueOf(args.table));
+        for (int i = 0; i < FAMILIES.length; i++) {
+            HColumnDescriptor hColumnDesc = new HColumnDescriptor(FAMILIES[i]);
+            tableDesc.addFamily(hColumnDesc);
+        }
+        admin.createTable(tableDesc);
+        LOG.info(String.format("Successfully created table '%s'", args.table));
+
+        admin.close();
 
         job.setNumReduceTasks(1);
 

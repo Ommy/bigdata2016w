@@ -3,15 +3,16 @@ package ca.uwaterloo.cs.bigdata2016w.Ommy.assignment7;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Set;
-import java.util.Stack;
-import java.util.TreeSet;
+import java.util.*;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.Text;
@@ -30,6 +31,10 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
     private MapFile.Reader index;
     private FSDataInputStream collection;
     private Stack<Set<Integer>> stack;
+
+    HTableInterface TABLE;
+    public static final String[] FAMILIES = { "p" };
+    public static final byte[] CF = FAMILIES[0].getBytes();
 
     private BooleanRetrievalHBase() {}
 
@@ -107,14 +112,21 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
     }
 
     private ArrayListWritable<PairOfInts> fetchPostings(String term) throws IOException {
-        Text key = new Text();
-        PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>> value =
-                new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>();
+//        Text key = new Text();
+//        PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>> value =
+//                new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>();
+        Get get = new Get(Bytes.toBytes(term));
+        Result result = TABLE.get(get);
+        NavigableMap<byte[], byte[]> familyMap = result.getFamilyMap(CF);
+        ArrayListWritable<PairOfInts> pairs = new ArrayListWritable<>();
 
-        key.set(term);
-        index.get(key, value);
+        for (Map.Entry<byte[], byte[]> entry: familyMap.entrySet()) {
+            pairs.add(new PairOfInts(Bytes.toInt(entry.getKey()), Bytes.toInt(entry.getValue())));
+        }
+//        key.set(term);
+//        index.get(key, value);
 
-        return value.getRightElement();
+        return pairs;
     }
 
     public String fetchLine(long offset) throws IOException {
@@ -134,6 +146,9 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
 
         @Option(name = "-query", metaVar = "[term]", required = true, usage = "query")
         public String query;
+
+        @Option(name = "-table", metaVar = "[name]", required = true, usage = "HBase table to store output")
+        public String table;
     }
 
     /**
@@ -157,6 +172,12 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
         }
 
         FileSystem fs = FileSystem.get(new Configuration());
+
+        Configuration conf = getConf();
+
+        Configuration hbaseConfig = HBaseConfiguration.create(conf);
+        HConnection hbaseConnection = HConnectionManager.createConnection(hbaseConfig);
+        TABLE = hbaseConnection.getTable(args.table);
 
         initialize(args.index, args.collection, fs);
 
