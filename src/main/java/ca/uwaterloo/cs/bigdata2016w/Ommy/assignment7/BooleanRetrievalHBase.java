@@ -149,6 +149,9 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
 
         @Option(name = "-table", metaVar = "[name]", required = true, usage = "HBase table to store output")
         public String table;
+
+        @Option(name = "-reducers", metaVar = "[num]", required = false, usage = "number of reducers")
+        public int numReducers = 1;
     }
 
     /**

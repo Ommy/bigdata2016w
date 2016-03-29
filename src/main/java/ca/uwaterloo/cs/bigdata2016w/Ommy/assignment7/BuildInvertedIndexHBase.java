@@ -118,6 +118,9 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
 
         @Option(name = "-config", metaVar = "[path]", required = true, usage = "HBase config")
         public String config;
+
+        @Option(name = "-reducers", metaVar = "[num]", required = false, usage = "number of reducers")
+        public int numReducers = 1;
     }
 
     /**
