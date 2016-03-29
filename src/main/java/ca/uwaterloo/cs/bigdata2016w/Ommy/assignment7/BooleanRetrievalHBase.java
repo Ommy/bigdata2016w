@@ -168,13 +168,14 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
             return -1;
         }
 
-        FileSystem fs = FileSystem.get(new Configuration());
-
         Configuration conf = getConf();
+        conf.addResource(new Path(args.config));
 
         Configuration hbaseConfig = HBaseConfiguration.create(conf);
         HConnection hbaseConnection = HConnectionManager.createConnection(hbaseConfig);
         TABLE = hbaseConnection.getTable(args.table);
+
+        FileSystem fs = FileSystem.get(new Configuration());
 
         initialize(args.collection, fs);
 
