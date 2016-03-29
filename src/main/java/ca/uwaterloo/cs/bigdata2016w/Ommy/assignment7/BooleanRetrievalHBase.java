@@ -13,9 +13,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.MapFile;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.kohsuke.args4j.CmdLineException;
@@ -25,10 +22,8 @@ import org.kohsuke.args4j.ParserProperties;
 
 import tl.lin.data.array.ArrayListWritable;
 import tl.lin.data.pair.PairOfInts;
-import tl.lin.data.pair.PairOfWritables;
 
 public class BooleanRetrievalHBase extends Configured implements Tool {
-    private MapFile.Reader index;
     private FSDataInputStream collection;
     private Stack<Set<Integer>> stack;
 
@@ -38,8 +33,7 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
 
     private BooleanRetrievalHBase() {}
 
-    private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
-        index = new MapFile.Reader(new Path(indexPath + "/part-r-00000"), fs.getConf());
+    private void initialize(String collectionPath, FileSystem fs) throws IOException {
         collection = fs.open(new Path(collectionPath));
         stack = new Stack<Set<Integer>>();
     }
@@ -138,9 +132,6 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
     }
 
     public static class Args {
-        @Option(name = "-index", metaVar = "[path]", required = true, usage = "index path")
-        public String index;
-
         @Option(name = "-collection", metaVar = "[path]", required = true, usage = "collection path")
         public String collection;
 
@@ -152,6 +143,9 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
 
         @Option(name = "-reducers", metaVar = "[num]", required = false, usage = "number of reducers")
         public int numReducers = 1;
+
+        @Option(name = "-config", metaVar = "[path]", required = true, usage = "HBase config")
+        public String config;
     }
 
     /**
@@ -182,7 +176,7 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
         HConnection hbaseConnection = HConnectionManager.createConnection(hbaseConfig);
         TABLE = hbaseConnection.getTable(args.table);
 
-        initialize(args.index, args.collection, fs);
+        initialize(args.collection, fs);
 
         System.out.println("Query: " + args.query);
         long startTime = System.currentTimeMillis();

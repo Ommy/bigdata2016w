@@ -110,9 +110,6 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
         @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
         public String input;
 
-        @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
-        public String output;
-
         @Option(name = "-table", metaVar = "[name]", required = true, usage = "HBase table to store output")
         public String table;
 
@@ -140,7 +137,6 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
 
         LOG.info("Tool: " + BuildInvertedIndexHBase.class.getSimpleName());
         LOG.info(" - input path: " + args.input);
-        LOG.info(" - output path: " + args.output);
 
         Job job = Job.getInstance(getConf());
         job.setJobName(BuildInvertedIndexHBase.class.getSimpleName());
@@ -173,7 +169,6 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
         job.setNumReduceTasks(1);
 
         FileInputFormat.setInputPaths(job, new Path(args.input));
-        FileOutputFormat.setOutputPath(job, new Path(args.output));
 
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(PairOfInts.class);
@@ -183,10 +178,6 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
 
         job.setMapperClass(MyMapper.class);
         job.setReducerClass(MyReducer.class);
-
-        // Delete the output directory if it exists already.
-        Path outputDir = new Path(args.output);
-        FileSystem.get(getConf()).delete(outputDir, true);
 
         long startTime = System.currentTimeMillis();
         job.waitForCompletion(true);
