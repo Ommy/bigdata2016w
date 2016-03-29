@@ -106,19 +106,13 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
     }
 
     private ArrayListWritable<PairOfInts> fetchPostings(String term) throws IOException {
-//        Text key = new Text();
-//        PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>> value =
-//                new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>();
         Get get = new Get(Bytes.toBytes(term));
         Result result = TABLE.get(get);
-        NavigableMap<byte[], byte[]> familyMap = result.getFamilyMap(CF);
         ArrayListWritable<PairOfInts> pairs = new ArrayListWritable<>();
 
-        for (Map.Entry<byte[], byte[]> entry: familyMap.entrySet()) {
+        for (Map.Entry<byte[], byte[]> entry: result.getFamilyMap(CF).entrySet()) {
             pairs.add(new PairOfInts(Bytes.toInt(entry.getKey()), Bytes.toInt(entry.getValue())));
         }
-//        key.set(term);
-//        index.get(key, value);
 
         return pairs;
     }
