@@ -12,6 +12,8 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.TableReducer;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -74,7 +76,7 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
     }
 
     private static class MyReducer extends
-            Reducer<Text, PairOfInts, Text, PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>> {
+            TableReducer<Text, PairOfInts, ImmutableBytesWritable> {
         private final static IntWritable DF = new IntWritable();
 
         @Override
@@ -97,6 +99,8 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
             for (PairOfInts pair : postings) {
                 put.add(CF, Bytes.toBytes(pair.getLeftElement()), Bytes.toBytes(pair.getRightElement()));
             }
+
+            context.write(null, put);
         }
     }
 
