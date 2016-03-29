@@ -177,6 +177,8 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
         job.setMapperClass(MyMapper.class);
         job.setReducerClass(MyReducer.class);
 
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(PairOfInts.class);
         job.setOutputValueClass(ImmutableBytesWritable.class);
 
         FileInputFormat.setInputPaths(job, new Path(args.input));
