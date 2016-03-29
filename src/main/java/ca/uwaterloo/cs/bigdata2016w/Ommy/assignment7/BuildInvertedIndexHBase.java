@@ -13,6 +13,7 @@ import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableReducer;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
@@ -21,6 +22,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
@@ -170,6 +172,9 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
 
         job.setMapperClass(MyMapper.class);
         job.setReducerClass(MyReducer.class);
+
+        FileInputFormat.setInputPaths(job, new Path(args.input));
+        TableMapReduceUtil.initTableReducerJob(args.table, MyReducer.class, job);
 
         long startTime = System.currentTimeMillis();
         job.waitForCompletion(true);
