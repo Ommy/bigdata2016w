@@ -168,14 +168,6 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
 
         job.setNumReduceTasks(1);
 
-        FileInputFormat.setInputPaths(job, new Path(args.input));
-
-        job.setMapOutputKeyClass(Text.class);
-        job.setMapOutputValueClass(PairOfInts.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(PairOfWritables.class);
-        job.setOutputFormatClass(MapFileOutputFormat.class);
-
         job.setMapperClass(MyMapper.class);
         job.setReducerClass(MyReducer.class);
 
