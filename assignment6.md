@@ -38,3 +38,18 @@
 |     9     | 15.12  |
 
 The average 1-ROCA% of the 10 iterations is 15.728
+
+
+Marks:
+Compilation: 4/4
+TrainSpamClassifier: 14/15
+ApplySpamClassifier: 5/5
+ApplyEnsembleClassifier: 6/6
+Shuffle implementation: 5/5
+Question Answers: 15/15
+Runs on Altiscale: 10/10
+Total: 59/60
+
+- Curious that voting achieved a better score for your answers than average
+- When training, the weight map should really just be in the flatMap/mapPartitions would not work as intended if program was more complex
+  - You end up copying the map rather than directly accessing it
